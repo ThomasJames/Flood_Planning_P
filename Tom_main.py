@@ -1,7 +1,3 @@
-# First line
-# Second Line
-# Third Line
-
 import numpy as np
 import pandas as pd
 from pyproj import CRS
