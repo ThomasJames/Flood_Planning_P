@@ -1,9 +1,9 @@
+# First line
 import numpy as np
 import pandas as pd
 from pyproj import CRS
 from pyproj import Transformer
 import shapely
-# this is a dummy line
 from shapely.geometry import Point
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
@@ -21,7 +21,6 @@ import numpy as np
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from shapely.geometry import LineString
-
 
 # All modules that can be used have been imported.
 
