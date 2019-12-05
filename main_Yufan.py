@@ -1,6 +1,5 @@
-# First line
-# Second Line
-# Third Line
+# Tom James
+
 
 import numpy as np
 import pandas as pd
