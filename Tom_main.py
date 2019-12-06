@@ -41,8 +41,8 @@ if __name__ == "__main__":
 
     # Request coordinates from the user.
 
-    east = int(input("Input an eastings coordinate: "))
-    north = int(input("Input an nothings coordinate: "))
+    east = int(input("Input a osgb36 eastings coordinate: "))
+    north = int(input("Input a osgb36 nothings coordinate: "))
 
     # Print the coordinates for reference
     print("Coordinates are ", east, " east and ", north, "north")
@@ -50,6 +50,32 @@ if __name__ == "__main__":
     # Assign the coordinates to a shapely point
     coordinate = Point(east, north)
     print(coordinate)
+
+    # create a minimum bounding box polygon with the coordinates (430000, 80000) and (465000, 95000)
+    # polygon = Polygon([(0, 0), (1, 1), (1, 0), (0.6, 0.4)])
+    # polygon.exterior
+
+    mbr = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    print(mbr.exterior)
+    x, y = mbr.exterior.xy
+    plt.fill(x, y)
+    plt.show()
+
+    def mbr_test(c):
+        if mbr.contains(c) == True:
+            print("This point is on the tile")
+        else:
+            print("Please quit the application")
+
+    mbr_test(coordinate)
+
+
+
+
+
+
+
+
 
 
 #_______________________________________________________________________________________________________________________
