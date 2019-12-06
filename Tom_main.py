@@ -79,6 +79,13 @@ if __name__ == "__main__":
     # Work out how much is 5km in coordinates the buffer around the coordinate
 
     five_km_buffer = coordinate.buffer(5)
+    # Links for Jake:
+    # Basic Rasterio
+    # https://rasterio.readthedocs.io/en/stable/quickstart.html
+    # To get min and max values
+    # https://thispointer.com/find-max-value-its-index-in-numpy-array-numpy-amax/ (page 11)
+
+
 # _______________________________________________________________________________________________________________________
 
 
