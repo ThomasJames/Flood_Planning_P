@@ -27,20 +27,16 @@ from shapely.geometry import LineString
 
 if __name__ == "__main__":
 
-
-
-
-# Task1: User Input
-# The application should ask the user to input their current location as a British National Grid coordinate
-# (easting and northing). Then, it should test whether the user is within a box (430000, 80000) and (465000, 95000).
-# If the input coor- dinate is outside this box, inform the user and quit the application.
-# This is done because the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and
-# the input point must be at least 5km from the edge of this raster.
+    # Task1: User Input
+    # The application should ask the user to input their current location as a British National Grid coordinate
+    # (easting and northing). Then, it should test whether the user is within a box (430000, 80000) and (465000, 95000).
+    # If the input coor- dinate is outside this box, inform the user and quit the application.
+    # This is done because the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and
+    # the input point must be at least 5km from the edge of this raster.
 
     osgb36 = pyproj.Proj("+init=EPSG:27700")
 
     # Request coordinates from the user.
-
     east = int(input("Input a osgb36 eastings coordinate: "))
     north = int(input("Input a osgb36 nothings coordinate: "))
 
@@ -51,51 +47,39 @@ if __name__ == "__main__":
     coordinate = Point(east, north)
     print(coordinate)
 
-    # create a minimum bounding box polygon with the coordinates (430000, 80000) and (465000, 95000)
-    # polygon = Polygon([(0, 0), (1, 1), (1, 0), (0.6, 0.4)])
-    # polygon.exterior
-
+    # create a minimum bounding box polygon with the specified coordinates
     mbr = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
-    print(mbr.exterior)
+    # Create the coordinates for the exterior
     x, y = mbr.exterior.xy
+    # Plot the bounding box
     plt.fill(x, y)
     plt.show()
 
-    def mbr_test(c):
-        if mbr.contains(c) == True:
-            print("This point is on the tile")
-        else:
-            print("Please quit the application")
+    # Class to contain bounding methods
+    class Bounding:
+        # Minimum bounding attribute
+        def mbr(c):
+            if mbr.contains(c):
+                print("This point is on the tile")
+            else:
+                print("Please quit the application")
 
-    mbr_test(coordinate)
+    # Call the mbr method from the Bounding class
+    Bounding.mbr(coordinate)
 
+    # _______________________________________________________________________________________________________________________
 
-
-
-
-
-
-
-
-
-#_______________________________________________________________________________________________________________________
-
-
-
-
-# Task 2: Highest Point Identification
-# Identify the highest point within a 5km radius from the user location.
-# To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
-# elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
-# to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task you
-# can select a random point within 5km of the user.
+    # Task 2: Highest Point Identification
+    # Identify the highest point within a 5km radius from the user location.
+    # To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
+    # elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
+    # to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task you
+    # can select a random point within 5km of the user.
 
     # Work out how much is 5km in coordinates the buffer around the coordinate
 
     five_km_buffer = coordinate.buffer(5)
-#_______________________________________________________________________________________________________________________
-
-
+# _______________________________________________________________________________________________________________________
 
 
 # Task 3: Nearest Integrated Transport Network
@@ -103,14 +87,7 @@ if __name__ == "__main__":
 # identified in the previous step. To successfully complete this task you could use r-trees.
 
 
-
-
-#_______________________________________________________________________________________________________________________
-
-
-
-
-
+# _______________________________________________________________________________________________________________________
 
 
 # Task 4: Shortest Path
@@ -124,11 +101,7 @@ if __name__ == "__main__":
 # To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
 
 
-
-
-#_______________________________________________________________________________________________________________________
-
-
+# _______________________________________________________________________________________________________________________
 
 
 # Task 5: Map Plotting
@@ -138,9 +111,7 @@ if __name__ == "__main__":
 # calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
 # arrow, a scale bar, and a legend.
 
-#_______________________________________________________________________________________________________________________
-
-
+# _______________________________________________________________________________________________________________________
 
 
 # Task 6: Extend the Region
