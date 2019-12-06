@@ -31,8 +31,8 @@ if __name__ == "__main__":
     # The application should ask the user to input their current location as a British National Grid coordinate
     # (easting and northing). Then, it should test whether the user is within a box (430000, 80000) and (465000, 95000).
     # If the input coor- dinate is outside this box, inform the user and quit the application.
-    # This is done because the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and
-    # the input point must be at least 5km from the edge of this raster.
+    # This is done because the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000)
+    # and the input point must be at least 5km from the edge of this raster.
 
     osgb36 = pyproj.Proj("+init=EPSG:27700")
 
@@ -67,6 +67,7 @@ if __name__ == "__main__":
     # Call the mbr method from the Bounding class
     Bounding.mbr(coordinate)
 
+
     # _______________________________________________________________________________________________________________________
 
     # Task 2: Highest Point Identification
@@ -76,14 +77,30 @@ if __name__ == "__main__":
     # to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task you
     # can select a random point within 5km of the user.
 
-    # Work out how much is 5km in coordinates the buffer around the coordinate
+    # import windows module from rasterio
+    from rasterio import windows
 
+    # Work out how much is 5km in coordinates the buffer around the coordinate
     five_km_buffer = coordinate.buffer(5)
-    # Links for Jake:
+
+    # Create a line between the point of highest elevation and the
+    point_to_elevation = LineString([(coordinate), (1, 1)])
+
+    # Find the istance of the line between the point and the highest point of elevation
+    point_to_elevation.distance(coordinate)
+
+
+
+
+
+    # Links from Jake:
     # Basic Rasterio
     # https://rasterio.readthedocs.io/en/stable/quickstart.html
     # To get min and max values
     # https://thispointer.com/find-max-value-its-index-in-numpy-array-numpy-amax/ (page 11)
+    # numy.amax function will find the maximum value.
+    # numpy.amax(a, axis=None, out=None, keepdims=<no value>, initial=<no value>)
+    # Aguments - a is the numpy array to find the maximum value,
 
 
 # _______________________________________________________________________________________________________________________
