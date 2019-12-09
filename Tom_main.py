@@ -83,6 +83,28 @@ if __name__ == "__main__":
 
     # import windows module from rasterio
     from rasterio import windows
+    elevation = rasterio.open("elevation/SZ.asc")
+    print(elevation)
+
+    elevation.read(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # Work out how much is 5km in coordinates the buffer around the coordinate
     five_km_buffer = coordinate.buffer(5)
@@ -90,8 +112,12 @@ if __name__ == "__main__":
     # Create a line between the point of highest elevation and the
     point_to_elevation = LineString([(coordinate), (1, 1)])
 
-    # Find the istance of the line between the point and the highest point of elevation
+    # Find the instance of the line between the point and the highest point of elevation
     point_to_elevation.distance(coordinate)
+
+    plt.fill(x, y)
+    plt.fill(elevation)
+    plt.show()
 
 
 
