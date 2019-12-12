@@ -20,6 +20,7 @@ import rasterio
 import pyproj
 import numpy as np
 import geopandas as gpd
+
 import matplotlib.pyplot as plt
 from shapely.geometry import LineString
 
@@ -29,7 +30,6 @@ if __name__ == "__main__":
     # Create variables containing the relevant data.
     # elevation = rasterio.open("../material/elevation/SZ.asc")
     # background = rasterio.open("../material/background/raster-50k_2724246.tif")
-    
 
     """""
     Task1: User Input
@@ -81,18 +81,21 @@ if __name__ == "__main__":
     to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task 
     you can select a random point within 5km of the user.
     """""
-
-    # import windows module from rasterio
-    from rasterio import windows
-    
+    # import and view the elevation data
     elevation = rasterio.open("elevation/SZ.asc")
+    # rasterio.plot.show(elevation)
+
+    # import and view the background data
+    background = rasterio.open("background/raster-50k_2724246.tif")
+    # rasterio.plot.show(background)
+
+    # Import isle of wight data
+    isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
+    isle_of_wight.plot()
+
+    # access the value of this raster as a NumPy array
     elevation.read(1)
     print(elevation.height)
-
-
-    
-    rasterio.plot.show(elevation)
-
 
     # Work out how much is 5km in coordinates the buffer around the coordinate
     five_km_buffer = coordinate.buffer(5)
@@ -103,9 +106,6 @@ if __name__ == "__main__":
     # Find the instance of the line between the point and the highest point of elevation
     point_to_elevation.distance(coordinate)
 
-
-
-
     # Links from Jake:
     # Basic Rasterio
     # https://rasterio.readthedocs.io/en/stable/quickstart.html
@@ -114,7 +114,6 @@ if __name__ == "__main__":
     # numy.amax function will find the maximum value.
     # numpy.amax(a, axis=None, out=None, keepdims=<no value>, initial=<no value>)
     # Aguments - a is the numpy array to find the maximum value,
-
 
     """""  
     Task 3: Nearest Integrated Transport Network
