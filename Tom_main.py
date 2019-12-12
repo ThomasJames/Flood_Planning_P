@@ -26,7 +26,10 @@ from shapely.geometry import LineString
 # All modules that can be used have been imported.
 
 if __name__ == "__main__":
-    ''
+    # Create variables containing the relevant data.
+    # elevation = rasterio.open("../material/elevation/SZ.asc")
+    # background = rasterio.open("../material/background/raster-50k_2724246.tif")
+    
 
     """""
     Task1: User Input
@@ -36,8 +39,6 @@ if __name__ == "__main__":
     This is done because the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000)
     and the input point must be at least 5km from the edge of this raster.
     """""
-
-    osgb36 = pyproj.Proj("+init=EPSG:27700")
 
     # Request coordinates from the user.
     east = int(input("Input a osgb36 eastings coordinate: "))
@@ -58,6 +59,7 @@ if __name__ == "__main__":
     plt.fill(x, y)
     plt.show()
 
+
     # Class to contain bounding methods
     class Bounding:
         # Minimum bounding method
@@ -67,43 +69,29 @@ if __name__ == "__main__":
             else:
                 print("Please quit the application")
 
+
     # Call the mbr method from the Bounding class
     Bounding.mbr(coordinate)
 
-
-    # _______________________________________________________________________________________________________________________
     """""
     Task 2: Highest Point Identification
     Identify the highest point within a 5km radius from the user location.
     To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
     elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
-    to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task you
-    can select a random point within 5km of the user.
+    to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task 
+    you can select a random point within 5km of the user.
     """""
 
     # import windows module from rasterio
     from rasterio import windows
+    
     elevation = rasterio.open("elevation/SZ.asc")
-    print(elevation)
-
     elevation.read(1)
+    print(elevation.height)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    rasterio.plot.show(elevation)
 
 
     # Work out how much is 5km in coordinates the buffer around the coordinate
@@ -114,11 +102,6 @@ if __name__ == "__main__":
 
     # Find the instance of the line between the point and the highest point of elevation
     point_to_elevation.distance(coordinate)
-
-    plt.fill(x, y)
-    plt.fill(elevation)
-    plt.show()
-
 
 
 
@@ -133,16 +116,11 @@ if __name__ == "__main__":
     # Aguments - a is the numpy array to find the maximum value,
 
 
-# _______________________________________________________________________________________________________________________
-
     """""  
     Task 3: Nearest Integrated Transport Network
     Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest point
     identified in the previous step. To successfully complete this task you could use r-trees.
     """""
-
-
-# _______________________________________________________________________________________________________________________
 
     """""  
     Task 4: Shortest Path
@@ -156,8 +134,6 @@ if __name__ == "__main__":
     To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
 
-# _______________________________________________________________________________________________________________________
-
     """""  
     Task 5: Map Plotting
     Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey raster
@@ -166,11 +142,9 @@ if __name__ == "__main__":
     calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
     arrow, a scale bar, and a legend.
     """""
-# _______________________________________________________________________________________________________________________
 
     """""  
     Task 6: Extend the Region
     The position of the user is restricted to a region in where the user must be more than 5km from the edge of the
     elevation raster. Write additional code to overcome this limitation.
     """""
-
