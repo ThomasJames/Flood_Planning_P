@@ -97,6 +97,15 @@ if __name__ == "__main__":
     elevation.read(1)
     print(elevation.height)
 
+    # To find the point of intersection
+    coordinate.buffer(1).intersection(elevation)
+
+    # argmax / argmin - for rasterio return the min/max coordinates
+    # numy.amax function will find the maximum value.
+    # numpy.amax(a, axis=None, out=None, keepdims=<no value>, initial=<no value>)
+    # Aguments - a is the numpy array to find the maximum value,
+
+    
     # Work out how much is 5km in coordinates the buffer around the coordinate
     coordinate_5km_bound = coordinate.buffer(5000)
 
@@ -104,22 +113,21 @@ if __name__ == "__main__":
     path = LineString([(coordinate_5km_bound), (1, 1)])
 
     # Find the instance of the line between the point and the highest point of elevation
-    path.distance(coordinate)
+    # path.length
 
     # Links from Jake:
     # Basic Rasterio
     # https://rasterio.readthedocs.io/en/stable/quickstart.html
     # To get min and max values
     # https://thispointer.com/find-max-value-its-index-in-numpy-array-numpy-amax/ (page 11)
-    # numy.amax function will find the maximum value.
-    # numpy.amax(a, axis=None, out=None, keepdims=<no value>, initial=<no value>)
-    # Aguments - a is the numpy array to find the maximum value,
+
 
     """""  
     Task 3: Nearest Integrated Transport Network
     Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest
      point identified in the previous step. To successfully complete this task you could use r-trees.
     """""
+
 
     """""  
     Task 4: Shortest Path
