@@ -98,13 +98,13 @@ if __name__ == "__main__":
     print(elevation.height)
 
     # Work out how much is 5km in coordinates the buffer around the coordinate
-    five_km_buffer = coordinate.buffer(5)
+    coordinate_5km_bound = coordinate.buffer(5000)
 
     # Create a line between the point of highest elevation and the
-    point_to_elevation = LineString([(coordinate), (1, 1)])
+    path = LineString([(coordinate_5km_bound), (1, 1)])
 
     # Find the instance of the line between the point and the highest point of elevation
-    point_to_elevation.distance(coordinate)
+    path.distance(coordinate)
 
     # Links from Jake:
     # Basic Rasterio
@@ -117,8 +117,8 @@ if __name__ == "__main__":
 
     """""  
     Task 3: Nearest Integrated Transport Network
-    Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest point
-    identified in the previous step. To successfully complete this task you could use r-trees.
+    Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest
+     point identified in the previous step. To successfully complete this task you could use r-trees.
     """""
 
     """""  
@@ -141,6 +141,7 @@ if __name__ == "__main__":
     calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
     arrow, a scale bar, and a legend.
     """""
+
 
     """""  
     Task 6: Extend the Region
