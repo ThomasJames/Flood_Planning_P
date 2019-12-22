@@ -1,5 +1,3 @@
-# Tom James
-
 import numpy as np
 import pandas as pd
 from pyproj import CRS
@@ -21,6 +19,13 @@ import pyproj
 import numpy as np
 import geopandas as gpd
 import json
+
+
+""""" Creating a GUI for the user  """
+import tkinter
+from tkinter import *
+# Aborted due to computer crashing: https://www.geeksforgeeks.org/python-gui-tkinter/
+
 
 import matplotlib.pyplot as plt
 from shapely.geometry import LineString
@@ -135,6 +140,8 @@ if __name__ == "__main__":
     (man-made path geometry in urban areas).
     """""
 
+
+
     """""    INDEXING THE VALUE      """""
 
     # Import the index module from rtree
@@ -147,7 +154,7 @@ if __name__ == "__main__":
     index_boundary = (430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)
 
     # We can now insert an entry into the index:
-    idx.insert(0, index_boundary)
+    idx.insert(0, index_boundary,  "A")
 
     # Create a for loop to iterate over the possible options of routes
 
@@ -167,6 +174,8 @@ if __name__ == "__main__":
     node nearest the highest point using only links in the ITN.
     To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
+
+
 
     """""  
     Task 5: Map Plotting
