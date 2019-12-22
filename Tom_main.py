@@ -20,6 +20,7 @@ import rasterio
 import pyproj
 import numpy as np
 import geopandas as gpd
+import json
 
 import matplotlib.pyplot as plt
 from shapely.geometry import LineString
@@ -41,8 +42,9 @@ if __name__ == "__main__":
     """""
 
     # Request coordinates from the user.
-    east = int(input("Input a osgb36 eastings coordinate: "))
-    north = int(input("Input a osgb36 nothings coordinate: "))
+    print("Plese input the coordinate of the point you want to test:")
+    north = float(input("x: "))
+    east = float(input("y: "))
 
     # Print the coordinates for reference
     print("Coordinates are ", east, " east and ", north, "north")
@@ -90,27 +92,29 @@ if __name__ == "__main__":
     # rasterio.plot.show(background)
 
     # Import isle of wight data
-    isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
-    isle_of_wight.plot()
+    # isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
+    # isle_of_wight.plot()
 
     # access the value of this raster as a NumPy array
-    elevation.read(1)
+    print(elevation.read(1))
     print(elevation.height)
 
     # To find the point of intersection
-    coordinate.buffer(1).intersection(elevation)
+    # coordinate.buffer(1).intersection(elevation)
+
+    # To find if a point lies inside a polygon
+    # mbr.contains(coordinate)
+
+    # Work out how much is 5km in coordinates the buffer around the coordinate     
+    # coordinate_5km_bound = coordinate.buffer(5000)
 
     # argmax / argmin - for rasterio return the min/max coordinates
     # numy.amax function will find the maximum value.
     # numpy.amax(a, axis=None, out=None, keepdims=<no value>, initial=<no value>)
     # Aguments - a is the numpy array to find the maximum value,
 
-    
-    # Work out how much is 5km in coordinates the buffer around the coordinate
-    coordinate_5km_bound = coordinate.buffer(5000)
-
     # Create a line between the point of highest elevation and the
-    path = LineString([(coordinate_5km_bound), (1, 1)])
+    # path = LineString([(coordinate_5km_bound), (1, 1)])
 
     # Find the instance of the line between the point and the highest point of elevation
     # path.length
@@ -121,13 +125,36 @@ if __name__ == "__main__":
     # To get min and max values
     # https://thispointer.com/find-max-value-its-index-in-numpy-array-numpy-amax/ (page 11)
 
-
     """""  
     Task 3: Nearest Integrated Transport Network
     Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest
-     point identified in the previous step. To successfully complete this task you could use r-trees.
+     point identified in the previous step. To successfully complete this task you could use r-trees.     
+    ITN is:
+    OS built transport network built to store data about Road Network (road geometry), Road Routing Information
+    (routing information for drivers concerning mandatory and banned turns and other restrictions) and Urban Paths
+    (man-made path geometry in urban areas).
     """""
 
+    """""    INDEXING THE VALUE      """""
+
+    # Import the index module from rtree
+    from rtree import index
+
+    # Build the index module using its default contructor
+    idx = index.Index()
+
+    # Assign a boundary to insert into the bounding box
+    index_boundary = (430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)
+
+    # We can now insert an entry into the index:
+    idx.insert(0, index_boundary)
+
+    # Create a for loop to iterate over the possible options of routes
+
+    # To find the nearest point
+    # If multiple points are of equal distance, they will all be returned.
+    for i in idx.nearest((20000, 30000), 1):
+        print(i)
 
     """""  
     Task 4: Shortest Path
@@ -149,7 +176,7 @@ if __name__ == "__main__":
     calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
     arrow, a scale bar, and a legend.
     """""
-
+    # See the network analysis of intergrated traffic network section
 
     """""  
     Task 6: Extend the Region
