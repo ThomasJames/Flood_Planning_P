@@ -21,6 +21,19 @@ import geopandas as gpd
 import json
 
 
+# Function to take polygon, and coordinate
+# Returns True if the point lies within the polygon
+
+def mbr(coordinate, bound):
+    try:
+        if bound.contains(coordinate):
+            return True
+        else:
+            return False
+    except IOError:
+        print("Unable to perform this operation")
+
+
 """"" Creating a GUI for the user  """
 import tkinter
 from tkinter import *
@@ -59,26 +72,18 @@ if __name__ == "__main__":
     print(coordinate)
 
     # create a minimum bounding box polygon with the specified coordinates
-    mbr = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
     # Create the coordinates for the exterior
-    x, y = mbr.exterior.xy
+    x, y = tile.exterior.xy
     # Plot the bounding box
     plt.fill(x, y)
     plt.show()
 
-
-    # Class to contain bounding methods
-    class Bounding:
-        # Minimum bounding method
-        def mbr(c):
-            if mbr.contains(c):
-                print("This point is on the tile")
-            else:
-                print("Please quit the application")
-
-
     # Call the mbr method from the Bounding class
-    Bounding.mbr(coordinate)
+    if mbr(coordinate, tile) == True:
+        print("Point is on tile")
+    else:
+        print("Please quit the application")
 
     """""
     Task 2: Highest Point Identification
@@ -140,21 +145,19 @@ if __name__ == "__main__":
     (man-made path geometry in urban areas).
     """""
 
-
-
     """""    INDEXING THE VALUE      """""
 
     # Import the index module from rtree
     from rtree import index
 
-    # Build the index module using its default contructor
+    # Build the index module using its default constructor
     idx = index.Index()
 
     # Assign a boundary to insert into the bounding box
     index_boundary = (430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)
 
     # We can now insert an entry into the index:
-    idx.insert(0, index_boundary,  "A")
+    idx.insert(0, index_boundary, "A")
 
     # Create a for loop to iterate over the possible options of routes
 
@@ -174,8 +177,6 @@ if __name__ == "__main__":
     node nearest the highest point using only links in the ITN.
     To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
-
-
 
     """""  
     Task 5: Map Plotting
