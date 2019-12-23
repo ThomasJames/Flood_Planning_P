@@ -46,9 +46,15 @@ from shapely.geometry import LineString
 # All modules that can be used have been imported.
 
 if __name__ == "__main__":
+
+    """""   First Step is to import that data """""
     # Create variables containing the relevant data.
     # elevation = rasterio.open("../material/elevation/SZ.asc")
     # background = rasterio.open("../material/background/raster-50k_2724246.tif")
+
+    # import and view the elevation data
+    elevation = rasterio.open("elevation/SZ.asc")
+    # Search the array for the highest point
 
     """""
     Task1: User Input
@@ -60,7 +66,7 @@ if __name__ == "__main__":
     """""
 
     # Request coordinates from the user.
-    print("Plese input the coordinate of the point you want to test:")
+    print("Please input the coordinate of the point you want to test:")
     north = float(input("east: "))
     east = float(input("north: "))
 
@@ -76,27 +82,35 @@ if __name__ == "__main__":
     x_c, y_c = coordinate_5km_bound.exterior.xy
 
     # create a minimum bounding box polygon with the specified coordinates
-    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])  # (439619, 85800)
     # Create the coordinates for the exterior
     x, y = tile.exterior.xy
 
     # Create intersect zone
-    intersect = coordinate_5km_bound.intersection(tile)
-    x_i, y_i = intersect.exterior.xy
+    if mbr(coordinate, tile):
+        intersect = coordinate_5km_bound.intersection(tile)
+        x_i, y_i = intersect.exterior.xy
+    else:
+        print("Coordinates are out of range")
 
     # Plot the tile, point, buffer and intersection zone
-    plt.scatter(east, north, color="black")  # Specific coordinate
-    plt.fill(x, y, color="wheat")  # Tile
+    plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
+    plt.plot(x, y, color="white", alpha=1)  # Tile
     plt.fill(x_c, y_c, color="skyblue", alpha=0.4)  # 50km Buffer at 40% opacity
-    plt.fill(x_i, y_i, color="tan")  # Intersection Zone
     plt.axis('equal')  # Ensures consistent sale
-    plt.show()
 
-    # Call the mbr method from the Bounding class
+    if mbr(coordinate, tile):
+        plt.fill(x_i, y_i, color="tan", alpha=0.3)  # Intersection Zone
+        rasterio.plot.show(elevation)
+        plt.show()
+    else:
+        print("Coordinates are out of range")  # cancel plot if out of range
+
+    # Prints whether the coordinate lies on the tile.
     if mbr(coordinate, tile):
         print("Point is on tile")
     else:
-        print("Please quit the application")
+        print("Coordinates are out of range, please quit the application")
 
     """""
     Task 2: Highest Point Identification
@@ -106,23 +120,9 @@ if __name__ == "__main__":
     to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task 
     you can select a random point within 5km of the user.
     """""
-    # import and view the elevation data
-    elevation = rasterio.open("elevation/SZ.asc")
 
     # Convert the raster to a NumPy array
     elevation_array = elevation.read(1)
-
-    # Search the array for the highest point
-    highest_point = np.amax(elevation_array)
-    print(highest_point)
-
-    # 
-
-
-
-    
-
-
 
     # Create a new shape.
     # shape = coordinate_5km_bound.intersection(elevation)
