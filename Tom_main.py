@@ -82,15 +82,7 @@ if __name__ == "__main__":
     To successfully complete this task you could (1) use the window function in rasterio to limit the size of your      
     elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
     to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task  
-    you can select a random point within 5km of the user.                                                               
-  
-    Task 5: Map Plotting
-    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey raster
-    (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s starting
-    point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the shortest route
-    calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
-    arrow, a scale bar, and a legend.
-    
+    you can select a random point within 5km of the user. 
     """""
 
     # Request coordinates from the user.
@@ -139,26 +131,16 @@ if __name__ == "__main__":
 
     highest_in_5km = np.amax(masked_elevation_array)
 
-    t = []
-    for i in range(len(masked_elevation_array)-1):
-        if np.amax(masked_elevation_array[i]) == highest_in_5km:
-            t.append(i)
-    print(t)
+    print("The highest point within 5km is ", highest_in_5km, " meters high")
 
-
-
-
-
-
-
-
-
-
-
-    print("The highest point within 5km is at" + str(0) +
-          "and is of a height " + str(highest_in_5km) + " meters")
-
-    # Plot _____________________________________________________________________________________________________________
+    """""
+    Task 5: Map Plotting
+    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey raster
+    (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s starting
+    point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the shortest route
+    calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
+    arrow, a scale bar, and a legend.
+    """""
 
     if mbr(coordinate, tile):
         plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
@@ -172,6 +154,16 @@ if __name__ == "__main__":
     else:
         print("Coordinates are out of range")  # cancel plot if out of range
 
+    """""  
+        Task 3: Nearest Integrated Transport Network
+        Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest
+         point identified in the previous step. To successfully complete this task you could use r-trees.     
+        ITN is:
+        OS built transport network built to store data about Road Network (road geometry), Road Routing Information
+        (routing information for drivers concerning mandatory and banned turns and other restrictions) and Urban Paths
+        (man-made path geometry in urban areas).
+        """""
+
     # Import isle of wight data (How to import shapefiles)
     # isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
     # isle_of_wight.plot()
@@ -184,16 +176,6 @@ if __name__ == "__main__":
     # https://rasterio.readthedocs.io/en/stable/quickstart.html
     # To get min and max values
     # https://thispointer.com/find-max-value-its-index-in-numpy-array-numpy-amax/ (page 11)
-
-    """""  
-    Task 3: Nearest Integrated Transport Network
-    Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest
-     point identified in the previous step. To successfully complete this task you could use r-trees.     
-    ITN is:
-    OS built transport network built to store data about Road Network (road geometry), Road Routing Information
-    (routing information for drivers concerning mandatory and banned turns and other restrictions) and Urban Paths
-    (man-made path geometry in urban areas).
-    """""
 
     """""    
     INDEXING THE VALUE    
