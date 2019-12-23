@@ -3,6 +3,7 @@ import pandas as pd
 from pyproj import CRS
 from pyproj import Transformer
 import shapely
+from shapely import geometry
 from shapely.geometry import Point
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
@@ -15,12 +16,12 @@ import rtree
 from rtree import index
 import networkx as nx
 import rasterio
+from rasterio import mask
 from rasterio.windows import Window
 import pyproj
 import numpy as np
 import geopandas as gpd
 import json
-
 
 # Function to take polygon, and coordinate
 # Returns True if the point lies within the polygon
@@ -48,6 +49,9 @@ from shapely.geometry import LineString
 
 # All modules that can be used have been imported.
 
+
+
+
 if __name__ == "__main__":
 
     """""   First Step is to import that data """""
@@ -56,10 +60,14 @@ if __name__ == "__main__":
     # background = rasterio.open("../material/background/raster-50k_2724246.tif")
 
     # import and view the elevation data
-    elevation = rasterio.open("elevation/SZ.asc")
+    elevation = rasterio.open("elevation/SZ.asc", "r")
+    background = rasterio.open("background/raster-50k_2724246.tif", "r")
+
+    # To access the value of the raster as a numpy array, we can use the read method
+    # Because a raster dataset can have mutliple bands, we need to pass as a paramter of
+    # The id of the later that we want to read.
     elevation_array = elevation.read(1)
     # Search the array for the highest point
-
 
     """""
     Task1: User Input
@@ -75,8 +83,7 @@ if __name__ == "__main__":
     elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
     to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task  
     you can select a random point within 5km of the user.                                                               
-    """"
-
+    """""
 
     # Request coordinates from the user.
     print("Please input the coordinate of the point you want to test:")
@@ -99,6 +106,7 @@ if __name__ == "__main__":
     # Create intersect zone
     if mbr(coordinate, tile):
         intersect = coordinate_5km_bound.intersection(tile)
+        intersect_coords = np.array(intersect.exterior)
         x_i, y_i = intersect.exterior.xy
     else:
         print("Coordinates are out of range")
@@ -106,11 +114,12 @@ if __name__ == "__main__":
     # Plot the tile, point, buffer and intersection zone
     if mbr(coordinate, tile):
         plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
-        plt.plot(x, y, color="white", alpha=1)  # Tile
+        plt.plot(x, y, color="wheat", alpha=1)  # Tile
         plt.fill(x_c, y_c, color="skyblue", alpha=0.4)  # 50km Buffer at 40% opacity
         plt.axis('equal')  # Ensures consistent sale
         plt.fill(x_i, y_i, color="tan", alpha=0.3)  # Intersection Zone
-        rasterio.plot.show(elevation)
+        rasterio.plot.show(elevation, alpha=1)
+
         plt.show()
     else:
         print("Coordinates are out of range")  # cancel plot if out of range
@@ -121,9 +130,18 @@ if __name__ == "__main__":
     else:
         print("Coordinates are out of range, please quit the application")
 
-    # Clip the elevation raster data using the shapefile data
-    from rasterio import features
-    from rasterio.features import rasterize
+    import rasterio as rio
+    from rasterio.mask import mask
+    from shapely.geometry import Polygon
+    from shapely.wkt import loads
+
+    intersect_list = [intersect]
+
+    masked_elevation_array, y = rasterio.mask.mask(elevation, intersect_list, crop=True)
+
+    highest_in_5km = np.amax(masked_elevation_array)
+
+    print("The highest point within 5km is at __ and is of a height " + str(highest_in_5km) + "Meters")
 
 
 
@@ -132,12 +150,6 @@ if __name__ == "__main__":
 
 
 
-    
-    
-
-
-
-    
 
 
 
@@ -145,35 +157,14 @@ if __name__ == "__main__":
 
 
 
-    
-
-    
-    
-
-  
-
-    
-
-        
 
 
 
 
-    """"
-    Task 2: Highest Point Identification
-    Identify the highest point within a 5km radius from the user location.
-    To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
-    elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
-    to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task 
-    you can select a random point within 5km of the user.
-    """"
 
 
-    # Create a new shape.
-    # shape = coordinate_5km_bound.intersection(elevation)
 
-    # Search the highest point of the shape
-    # highest_point = np.amax(shape)
+
 
     # Import isle of wight data (How to import shapefiles)
     # isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
@@ -181,12 +172,6 @@ if __name__ == "__main__":
     # import and view the background data
     # background = rasterio.open("background/raster-50k_2724246.tif")
     # rasterio.plot.show(background)
-
-    # Create a line between the point of highest elevation and the
-    # path = LineString([(coordinate_5km_bound), (1, 1)])
-
-    # Find the instance of the line between the point and the highest point of elevation
-    # path.length
 
     # Links from Jake:
     # Basic Rasterio
