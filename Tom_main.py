@@ -22,6 +22,8 @@ import pyproj
 import numpy as np
 import geopandas as gpd
 import json
+from rasterio.mask import mask
+from shapely.wkt import loads
 
 # Function to take polygon, and coordinate
 # Returns True if the point lies within the polygon
@@ -48,8 +50,6 @@ import matplotlib.pyplot as plt
 from shapely.geometry import LineString
 
 # All modules that can be used have been imported.
-
-
 
 
 if __name__ == "__main__":
@@ -83,12 +83,19 @@ if __name__ == "__main__":
     elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
     to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task  
     you can select a random point within 5km of the user.                                                               
+  
+    Task 5: Map Plotting
+    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey raster
+    (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s starting
+    point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the shortest route
+    calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
+    arrow, a scale bar, and a legend.
+    
     """""
 
     # Request coordinates from the user.
-    print("Please input the coordinate of the point you want to test:")
-    north = float(input("east: "))
-    east = float(input("north: "))
+    print("Please input your location:")
+    north, east = float(input("east: ")), float(input("north: "))
 
     # Assign the coordinates to a shapely point
     coordinate = Point(east, north)
@@ -99,9 +106,16 @@ if __name__ == "__main__":
     x_c, y_c = coordinate_5km_bound.exterior.xy
 
     # create a minimum bounding box polygon with the specified coordinates
-    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])  # (439619, 85800)
+    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
     # Create the coordinates for the exterior
-    x, y = tile.exterior.xy
+    x_t, y_t = tile.exterior.xy
+
+    # Some test coordinates
+    # (439619, 85800)
+    # (459619, 85800)
+    # (450000, 94800
+    # (450001, 80001
+    # 434615, 90800
 
     # Create intersect zone
     if mbr(coordinate, tile):
@@ -112,17 +126,6 @@ if __name__ == "__main__":
         print("Coordinates are out of range")
 
     # Plot the tile, point, buffer and intersection zone
-    if mbr(coordinate, tile):
-        plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
-        plt.plot(x, y, color="wheat", alpha=1)  # Tile
-        plt.fill(x_c, y_c, color="skyblue", alpha=0.4)  # 50km Buffer at 40% opacity
-        plt.axis('equal')  # Ensures consistent sale
-        plt.fill(x_i, y_i, color="tan", alpha=0.3)  # Intersection Zone
-        rasterio.plot.show(elevation, alpha=1)
-
-        plt.show()
-    else:
-        print("Coordinates are out of range")  # cancel plot if out of range
 
     # Prints whether the coordinate lies on the tile.
     if mbr(coordinate, tile):
@@ -130,41 +133,30 @@ if __name__ == "__main__":
     else:
         print("Coordinates are out of range, please quit the application")
 
-    import rasterio as rio
-    from rasterio.mask import mask
-    from shapely.geometry import Polygon
-    from shapely.wkt import loads
-
     intersect_list = [intersect]
 
     masked_elevation_array, y = rasterio.mask.mask(elevation, intersect_list, crop=True)
 
     highest_in_5km = np.amax(masked_elevation_array)
 
-    print("The highest point within 5km is at __ and is of a height " + str(highest_in_5km) + "Meters")
+    # Need to find out a way to access the coordinates of the highest point.
 
+    print("The highest point within 5km is at" + str(0) +
+          "and is of a height " + str(highest_in_5km) + " meters")
 
+    # Plot _____________________________________________________________________________________________________________
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if mbr(coordinate, tile):
+        plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
+        plt.plot(x_t, y_t, color="wheat", alpha=1)  # Tile
+        plt.fill(x_c, y_c, color="skyblue", alpha=0.4)  # 50km Buffer at 40% opacity
+        plt.axis('equal')  # Ensures consistent sale
+        plt.fill(x_i, y_i, color="tan", alpha=0.4)  # Intersection Zone
+        plt.arrow(427500, 102500, 0, 1000, head_width=800, color="black")
+        rasterio.plot.show(elevation, alpha=1)  # Plot the elevation data
+        plt.show()
+    else:
+        print("Coordinates are out of range")  # cancel plot if out of range
 
     # Import isle of wight data (How to import shapefiles)
     # isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
@@ -227,12 +219,7 @@ if __name__ == "__main__":
     """""
 
     """""  
-    Task 5: Map Plotting
-    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey raster
-    (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s starting
-    point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the shortest route
-    calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
-    arrow, a scale bar, and a legend.
+
     """""
     # See the network analysis of intergrated traffic network section
 
