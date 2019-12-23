@@ -15,6 +15,7 @@ import rtree
 from rtree import index
 import networkx as nx
 import rasterio
+from rasterio.windows import Window
 import pyproj
 import numpy as np
 import geopandas as gpd
@@ -23,6 +24,8 @@ import json
 
 # Function to take polygon, and coordinate
 # Returns True if the point lies within the polygon
+from sympy.utilities import pytest
+
 
 def mbr(c, b):
     try:
@@ -54,7 +57,9 @@ if __name__ == "__main__":
 
     # import and view the elevation data
     elevation = rasterio.open("elevation/SZ.asc")
+    elevation_array = elevation.read(1)
     # Search the array for the highest point
+
 
     """""
     Task1: User Input
@@ -63,15 +68,20 @@ if __name__ == "__main__":
     If the input coor- dinate is outside this box, inform the user and quit the application.
     This is done because the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000)
     and the input point must be at least 5km from the edge of this raster.
-    """""
+                                                                                                               
+    Task 2: Highest Point Identification                                                                                
+    Identify the highest point within a 5km radius from the user location.                                              
+    To successfully complete this task you could (1) use the window function in rasterio to limit the size of your      
+    elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
+    to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task  
+    you can select a random point within 5km of the user.                                                               
+    """"
+
 
     # Request coordinates from the user.
     print("Please input the coordinate of the point you want to test:")
     north = float(input("east: "))
     east = float(input("north: "))
-
-    # Print the coordinates for reference
-    print("Coordinates are ", east, " east and ", north, "north")
 
     # Assign the coordinates to a shapely point
     coordinate = Point(east, north)
@@ -94,12 +104,11 @@ if __name__ == "__main__":
         print("Coordinates are out of range")
 
     # Plot the tile, point, buffer and intersection zone
-    plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
-    plt.plot(x, y, color="white", alpha=1)  # Tile
-    plt.fill(x_c, y_c, color="skyblue", alpha=0.4)  # 50km Buffer at 40% opacity
-    plt.axis('equal')  # Ensures consistent sale
-
     if mbr(coordinate, tile):
+        plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
+        plt.plot(x, y, color="white", alpha=1)  # Tile
+        plt.fill(x_c, y_c, color="skyblue", alpha=0.4)  # 50km Buffer at 40% opacity
+        plt.axis('equal')  # Ensures consistent sale
         plt.fill(x_i, y_i, color="tan", alpha=0.3)  # Intersection Zone
         rasterio.plot.show(elevation)
         plt.show()
@@ -112,17 +121,53 @@ if __name__ == "__main__":
     else:
         print("Coordinates are out of range, please quit the application")
 
-    """""
+    # Clip the elevation raster data using the shapefile data
+    from rasterio import features
+    from rasterio.features import rasterize
+
+
+
+
+
+
+
+
+    
+    
+
+
+
+    
+
+
+
+
+
+
+
+    
+
+    
+    
+
+  
+
+    
+
+        
+
+
+
+
+    """"
     Task 2: Highest Point Identification
     Identify the highest point within a 5km radius from the user location.
     To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
     elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
     to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task 
     you can select a random point within 5km of the user.
-    """""
+    """"
 
-    # Convert the raster to a NumPy array
-    elevation_array = elevation.read(1)
 
     # Create a new shape.
     # shape = coordinate_5km_bound.intersection(elevation)
