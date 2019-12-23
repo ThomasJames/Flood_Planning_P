@@ -135,11 +135,25 @@ if __name__ == "__main__":
 
     intersect_list = [intersect]
 
-    masked_elevation_array, y = rasterio.mask.mask(elevation, intersect_list, crop=True)
+    masked_elevation_array, transformed = rasterio.mask.mask(elevation, intersect_list, crop=True)
 
     highest_in_5km = np.amax(masked_elevation_array)
 
-    # Need to find out a way to access the coordinates of the highest point.
+    t = []
+    for i in range(len(masked_elevation_array)-1):
+        if np.amax(masked_elevation_array[i]) == highest_in_5km:
+            t.append(i)
+    print(t)
+
+
+
+
+
+
+
+
+
+
 
     print("The highest point within 5km is at" + str(0) +
           "and is of a height " + str(highest_in_5km) + " meters")
