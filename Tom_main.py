@@ -24,9 +24,9 @@ import json
 # Function to take polygon, and coordinate
 # Returns True if the point lies within the polygon
 
-def mbr(coordinate, bound):
+def mbr(c, b):
     try:
-        if bound.contains(coordinate):
+        if b.contains(c):
             return True
         else:
             return False
@@ -61,8 +61,8 @@ if __name__ == "__main__":
 
     # Request coordinates from the user.
     print("Plese input the coordinate of the point you want to test:")
-    north = float(input("x: "))
-    east = float(input("y: "))
+    north = float(input("east: "))
+    east = float(input("north: "))
 
     # Print the coordinates for reference
     print("Coordinates are ", east, " east and ", north, "north")
@@ -71,16 +71,29 @@ if __name__ == "__main__":
     coordinate = Point(east, north)
     print(coordinate)
 
+    # Create a 5km buffer around the point
+    coordinate_5km_bound = coordinate.buffer(5000)
+    x_c, y_c = coordinate_5km_bound.exterior.xy
+
     # create a minimum bounding box polygon with the specified coordinates
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
     # Create the coordinates for the exterior
     x, y = tile.exterior.xy
-    # Plot the bounding box
-    plt.fill(x, y)
+
+    # Create intersect zone
+    intersect = coordinate_5km_bound.intersection(tile)
+    x_i, y_i = intersect.exterior.xy
+
+    # Plot the tile, point, buffer and intersection zone
+    plt.scatter(east, north, color="black")  # Specific coordinate
+    plt.fill(x, y, color="wheat")  # Tile
+    plt.fill(x_c, y_c, color="skyblue", alpha=0.4)  # 50km Buffer at 40% opacity
+    plt.fill(x_i, y_i, color="tan")  # Intersection Zone
+    plt.axis('equal')  # Ensures consistent sale
     plt.show()
 
     # Call the mbr method from the Bounding class
-    if mbr(coordinate, tile) == True:
+    if mbr(coordinate, tile):
         print("Point is on tile")
     else:
         print("Please quit the application")
@@ -95,33 +108,34 @@ if __name__ == "__main__":
     """""
     # import and view the elevation data
     elevation = rasterio.open("elevation/SZ.asc")
-    # rasterio.plot.show(elevation)
 
-    # import and view the background data
-    background = rasterio.open("background/raster-50k_2724246.tif")
-    # rasterio.plot.show(background)
+    # Convert the raster to a NumPy array
+    elevation_array = elevation.read(1)
 
-    # Import isle of wight data
+    # Search the array for the highest point
+    highest_point = np.amax(elevation_array)
+    print(highest_point)
+
+    # 
+
+
+
+    
+
+
+
+    # Create a new shape.
+    # shape = coordinate_5km_bound.intersection(elevation)
+
+    # Search the highest point of the shape
+    # highest_point = np.amax(shape)
+
+    # Import isle of wight data (How to import shapefiles)
     # isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
     # isle_of_wight.plot()
-
-    # access the value of this raster as a NumPy array
-    print(elevation.read(1))
-    print(elevation.height)
-
-    # To find the point of intersection
-    # coordinate.buffer(1).intersection(elevation)
-
-    # To find if a point lies inside a polygon
-    # mbr.contains(coordinate)
-
-    # Work out how much is 5km in coordinates the buffer around the coordinate     
-    # coordinate_5km_bound = coordinate.buffer(5000)
-
-    # argmax / argmin - for rasterio return the min/max coordinates
-    # numy.amax function will find the maximum value.
-    # numpy.amax(a, axis=None, out=None, keepdims=<no value>, initial=<no value>)
-    # Aguments - a is the numpy array to find the maximum value,
+    # import and view the background data
+    # background = rasterio.open("background/raster-50k_2724246.tif")
+    # rasterio.plot.show(background)
 
     # Create a line between the point of highest elevation and the
     # path = LineString([(coordinate_5km_bound), (1, 1)])
@@ -145,7 +159,8 @@ if __name__ == "__main__":
     (man-made path geometry in urban areas).
     """""
 
-    """""    INDEXING THE VALUE      """""
+    """""    
+    INDEXING THE VALUE    
 
     # Import the index module from rtree
     from rtree import index
@@ -164,7 +179,10 @@ if __name__ == "__main__":
     # To find the nearest point
     # If multiple points are of equal distance, they will all be returned.
     for i in idx.nearest((20000, 30000), 1):
-        print(i)
+        print(i) 
+    
+    INDEXING THE VALUE      
+    """""
 
     """""  
     Task 4: Shortest Path
