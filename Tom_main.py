@@ -24,6 +24,8 @@ import geopandas as gpd
 import json
 from rasterio.mask import mask
 from shapely.wkt import loads
+import scipy
+from scipy import sparse
 
 # Function to take polygon, and coordinate
 # Returns True if the point lies within the polygon
@@ -110,7 +112,7 @@ if __name__ == "__main__":
     # 434615, 90800
 
     # Create intersect zone
-    if mbr(coordinate, tile):
+    if mbr(coordinate_5km_bound, tile):
         intersect = coordinate_5km_bound.intersection(tile)
         intersect_coords = np.array(intersect.exterior)
         x_i, y_i = intersect.exterior.xy
@@ -120,18 +122,15 @@ if __name__ == "__main__":
     # Plot the tile, point, buffer and intersection zone
 
     # Prints whether the coordinate lies on the tile.
-    if mbr(coordinate, tile):
+    if mbr(coordinate_5km_bound, tile):
         print("Point is on tile")
     else:
         print("Coordinates are out of range, please quit the application")
 
-    intersect_list = [intersect]
-
-    masked_elevation_array, transformed = rasterio.mask.mask(elevation, intersect_list, crop=True)
-
-    highest_in_5km = np.amax(masked_elevation_array)
-
-    print("The highest point within 5km is ", highest_in_5km, " meters high")
+    if mbr(coordinate_5km_bound, tile):
+        masked_elevation_array, transformed = rasterio.mask.mask(elevation, [intersect], crop=True)
+        highest_in_5km = np.amax(masked_elevation_array)
+        print("The highest point within 5km is ", highest_in_5km, " meters high")
 
     """""
     Task 5: Map Plotting
@@ -142,11 +141,12 @@ if __name__ == "__main__":
     arrow, a scale bar, and a legend.
     """""
 
-    if mbr(coordinate, tile):
+    # Plot to show the user location, with a 5km radius, overlayed onto the elevation data
+    if mbr(coordinate_5km_bound, tile):
         plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
         plt.plot(x_t, y_t, color="wheat", alpha=1)  # Tile
-        plt.fill(x_c, y_c, color="skyblue", alpha=0.4)  # 50km Buffer at 40% opacity
-        plt.axis('equal')  # Ensures consistent sale
+        plt.fill(x_c, y_c, color="skyblue", alpha=0.1)  # 50km Buffer at 40% opacity
+        plt.axis('equal')  # Ensures consistent scale
         plt.fill(x_i, y_i, color="tan", alpha=0.4)  # Intersection Zone
         plt.arrow(427500, 102500, 0, 1000, head_width=800, color="black")
         rasterio.plot.show(elevation, alpha=1)  # Plot the elevation data
@@ -155,52 +155,28 @@ if __name__ == "__main__":
         print("Coordinates are out of range")  # cancel plot if out of range
 
     """""  
-        Task 3: Nearest Integrated Transport Network
-        Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest
-         point identified in the previous step. To successfully complete this task you could use r-trees.     
-        ITN is:
-        OS built transport network built to store data about Road Network (road geometry), Road Routing Information
-        (routing information for drivers concerning mandatory and banned turns and other restrictions) and Urban Paths
-        (man-made path geometry in urban areas).
-        """""
-
-    # Import isle of wight data (How to import shapefiles)
-    # isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
-    # isle_of_wight.plot()
-    # import and view the background data
-    # background = rasterio.open("background/raster-50k_2724246.tif")
-    # rasterio.plot.show(background)
-
-    # Links from Jake:
-    # Basic Rasterio
-    # https://rasterio.readthedocs.io/en/stable/quickstart.html
-    # To get min and max values
-    # https://thispointer.com/find-max-value-its-index-in-numpy-array-numpy-amax/ (page 11)
-
-    """""    
-    INDEXING THE VALUE    
-
-    # Import the index module from rtree
-    from rtree import index
-
-    # Build the index module using its default constructor
-    idx = index.Index()
-
-    # Assign a boundary to insert into the bounding box
-    index_boundary = (430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)
-
-    # We can now insert an entry into the index:
-    idx.insert(0, index_boundary, "A")
-
-    # Create a for loop to iterate over the possible options of routes
-
-    # To find the nearest point
-    # If multiple points are of equal distance, they will all be returned.
-    for i in idx.nearest((20000, 30000), 1):
-        print(i) 
-    
-    INDEXING THE VALUE      
+    Task 3: Nearest Integrated Transport Network
+    Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest
+     point identified in the previous step. To successfully complete this task you could use r-trees.     
+    ITN is:
+    OS built transport network built to store data about Road Network (road geometry), Road Routing Information
+    (routing information for drivers concerning mandatory and banned turns and other restrictions) and Urban Paths
+    (man-made path geometry in urban areas).
     """""
+
+    # Import the ITN file
+    solent_itn_json = "itn/solent_itn.json"
+    with open(solent_itn_json, "r") as f:
+        solent_itn_json = json.load(f)
+
+    # Plotting the ITN roadlinks
+    g = nx.Graph()
+    road_links = solent_itn_json['roadlinks']
+    for link in road_links:
+        g.add_edge(road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'])
+
+    nx.draw(g, node_size=0.1, edge_size=0.1)
+    plt.show()
 
     """""  
     Task 4: Shortest Path
@@ -213,11 +189,6 @@ if __name__ == "__main__":
     node nearest the highest point using only links in the ITN.
     To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
-
-    """""  
-
-    """""
-    # See the network analysis of intergrated traffic network section
 
     """""  
     Task 6: Extend the Region
