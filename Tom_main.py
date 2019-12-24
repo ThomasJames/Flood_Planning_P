@@ -3,6 +3,7 @@ import pandas as pd
 from pyproj import CRS
 from pyproj import Transformer
 import shapely
+from rtree.index import Index
 from shapely import geometry
 from shapely.geometry import Point
 from shapely.geometry import LineString
@@ -142,17 +143,21 @@ if __name__ == "__main__":
     """""
 
     # Plot to show the user location, with a 5km radius, overlayed onto the elevation data
-    if mbr(coordinate_5km_bound, tile):
-        plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
-        plt.plot(x_t, y_t, color="wheat", alpha=1)  # Tile
-        plt.fill(x_c, y_c, color="skyblue", alpha=0.1)  # 50km Buffer at 40% opacity
-        plt.axis('equal')  # Ensures consistent scale
-        plt.fill(x_i, y_i, color="tan", alpha=0.4)  # Intersection Zone
-        plt.arrow(427500, 102500, 0, 1000, head_width=800, color="black")
-        rasterio.plot.show(elevation, alpha=1)  # Plot the elevation data
-        plt.show()
-    else:
-        print("Coordinates are out of range")  # cancel plot if out of range
+
+    plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
+    plt.plot(x_t, y_t, color="wheat", alpha=1)  # Tile
+    plt.fill(x_c, y_c, color="skyblue", alpha=0.1)  # 50km Buffer at 40% opacity
+    plt.axis('equal')  # Ensures consistent scale
+    plt.fill(x_i, y_i, color="tan", alpha=0.4)  # Intersection Zone
+    plt.arrow(427500, 102000, 0, 1000, head_width=400, color="black")  # North Arrow
+    plt.text(427100, 101100, "N", fontsize=7)  # North Arrow text
+    plt.arrow(427500, 72000, 10000, 0, head_width=0, color="black")  # Scale bar
+    plt.text(430200, 71250, "5 km", fontsize=5)  # Scale bar text
+    plt.ylabel("Northings")
+    plt.xlabel("Eastings")
+    plt.title("Elevation map")
+    rasterio.plot.show(elevation, alpha=1)  # Plot the elevation data
+    plt.show()
 
     """""  
     Task 3: Nearest Integrated Transport Network
@@ -170,13 +175,12 @@ if __name__ == "__main__":
         solent_itn_json = json.load(f)
 
     # Plotting the ITN roadlinks
-    g = nx.Graph()
-    road_links = solent_itn_json['roadlinks']
-    for link in road_links:
-        g.add_edge(road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'])
-
-    nx.draw(g, node_size=0.1, edge_size=0.1)
-    plt.show()
+    # g = nx.Graph()
+    # road_links = solent_itn_json['roadlinks']
+    # for link in road_links:
+    #     g.add_edge(road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'])
+    # nx.draw(g, node_size=0.1, edge_size=0.0)
+    # plt.show()
 
     """""  
     Task 4: Shortest Path
