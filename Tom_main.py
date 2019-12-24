@@ -57,7 +57,7 @@ from shapely.geometry import LineString
 
 if __name__ == "__main__":
 
-    """""   First Step is to import that data """""
+    """""   First Step is to import that data, in this format """""
     # Create variables containing the relevant data.
     # elevation = rasterio.open("../material/elevation/SZ.asc")
     # background = rasterio.open("../material/background/raster-50k_2724246.tif")
@@ -132,6 +132,23 @@ if __name__ == "__main__":
         masked_elevation_array, transformed = rasterio.mask.mask(elevation, [intersect], crop=True)
         highest_in_5km = np.amax(masked_elevation_array)
         print("The highest point within 5km is ", highest_in_5km, " meters high")
+
+    # Find index of maximum value from 2D numpy array
+    result = np.where(masked_elevation_array == np.amax(masked_elevation_array))
+
+    print('Tuple of arrays returned : ', result)
+
+    print('List of coordinates of maximum value in Numpy array : ')
+    # zip the 2 arrays to get the exact coordinates
+    listOfCordinates = list(zip(result[0], result[1]))
+    # travese over the list of coordinates
+    for cord in listOfCordinates:
+        print(cord)
+
+    # Potential Solution:
+    # Write the masked elevation elevation array to a pandas data frame
+    # Index the data frame for the specific value
+    # The value returned
 
     """""
     Task 5: Map Plotting
