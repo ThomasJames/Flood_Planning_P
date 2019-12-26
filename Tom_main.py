@@ -1,3 +1,4 @@
+
 import numpy as np
 import pandas as pd
 from pyproj import CRS
@@ -45,6 +46,16 @@ def on_tile(c, b):
         print("Unable to perform this operation")
 
 
+import numpy as np
+
+
+def zoom(a, factor):
+    a = np.asarray(a)
+    slices = [slice(0, old, 1 / factor) for old in a.shape]
+    idxs = (np.mgrid[slices]).astype('i')
+    return a[tuple(idxs)]
+
+
 """"" Creating a GUI for the user  """
 import tkinter
 from tkinter import *
@@ -68,12 +79,8 @@ if __name__ == "__main__":
     elevation = rasterio.open("elevation/SZ.asc", "r")
     background = rasterio.open("background/raster-50k_2724246.tif", "r")
 
-    # To access the value of the raster as a numpy array, we can use the read method
-    # Because a raster dataset can have mutliple bands, we need to pass as a paramter of
-    # The id of the later that we want to read.
+    # Read elevation data as an array
     elevation_array = elevation.read(1)
-    # Search the array for the highest point
-    elevation_array = elevation_array.resize(5, 5)
 
     """""
     Task1: User Input
@@ -96,12 +103,12 @@ if __name__ == "__main__":
     north, east = float(input("east: ")), float(input("north: "))
 
     # Assign the coordinates to a shapely point
-    coordinate = Point(east, north)
-    print(coordinate)
+    user_location = Point(east, north)
+    print(user_location)
 
     # Create a 5km buffer around the point
-    coordinate_5km_bound = coordinate.buffer(5000)
-    x_c, y_c = coordinate_5km_bound.exterior.xy
+    user_location_5km_buffer = user_location.buffer(5000)
+    x_c, y_c = user_location_5km_buffer.exterior.xy
 
     # create a minimum bounding box polygon with the specified coordinates
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
@@ -111,30 +118,30 @@ if __name__ == "__main__":
     # Some test coordinates
     # (459619, 85800)
     # (439619, 85800)
+    # (450000, 90000) 
 
-    intersect = coordinate_5km_bound.intersection(tile)
+    intersect = user_location_5km_buffer.intersection(tile)
     intersect_coords = np.array(intersect.exterior)
     x_i, y_i = intersect.exterior.xy
 
-    # Plot the tile, point, buffer and intersection zone
-
     # State whether the coordinate lies on the tile
-    if on_tile(coordinate_5km_bound, tile):
+    if on_tile(user_location_5km_buffer, tile):
         print("Point is on tile")
     else:
         print("You are out of range, please quit the application")
 
     # If the buffer zone is within the tile, points outside the intersection zone are excluded.
-    if on_tile(coordinate_5km_bound, tile):
+    if on_tile(user_location_5km_buffer, tile):
         # mask the elevation area outside the buffer zone
         masked_elevation_array, transformed = rasterio.mask.mask(elevation, [intersect], crop=False)
-        highest_in_5km = np.amax(masked_elevation_array)
-
-        # Reslcate the coordinates (5 Pixels for every m)
+        # Rescale the coordinates (5 Pixels for every m)
         rescaled_masked_elevation_array = np.kron(masked_elevation_array, np.ones((5, 5)))
 
+        # Access the highest point
+        highest_in_5km = np.amax(rescaled_masked_elevation_array)
+
         # Extract the coordinates of the highest point
-        x_h, y_h = zip(np.where(*rescaled_masked_elevation_array == highest_in_5km))
+        x_h, y_h = zip(*np.where(rescaled_masked_elevation_array == highest_in_5km))
 
     # Adjust the coordinates
     e_h = ((x_h[0]) + 75000)
@@ -144,14 +151,18 @@ if __name__ == "__main__":
     e_h = e_h[1]
     n_h = n_h[1]
 
+    # Assign shapley point
+    safe_zone = Point(e_h, n_h)
+
+    # Calculate the distance between the user and the safe zone.
+    distance_from_saftey = (user_location.distance(safe_zone)) / 1000
+
     print(e_h)
     print(n_h)
 
     # Prints details of the results
-    print("The highest point within 5km is at ", n_h, "north, and ",
-          e_h, "east", "at a height of: ", highest_in_5km, " meters")
-
-
+    print("The highest point within 5km from you is at ", n_h, "E,",
+          e_h, "E", "at a height of", highest_in_5km, "meters, at a distance of", distance_from_saftey)
 
     """""
     Task 5: Map Plotting
@@ -194,6 +205,9 @@ if __name__ == "__main__":
     solent_itn_json = "itn/solent_itn.json"
     with open(solent_itn_json, "r") as f:
         solent_itn_json = json.load(f)
+
+    # Users stating location - user_location
+    # Target location - safe_zone
 
     # Plotting the ITN roadlinks
     # g = nx.Graph()
