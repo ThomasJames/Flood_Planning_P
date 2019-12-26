@@ -27,13 +27,15 @@ from rasterio.mask import mask
 from shapely.wkt import loads
 import scipy
 from scipy import sparse
+from numpy import asarray
+from numpy import savetxt
 
 # Function to take polygon, and coordinate
 # Returns True if the point lies within the polygon
 from sympy.utilities import pytest
 
 
-def mbr(c, b):
+def on_tile(c, b):
     try:
         if b.contains(c):
             return True
@@ -106,49 +108,39 @@ if __name__ == "__main__":
     x_t, y_t = tile.exterior.xy
 
     # Some test coordinates
-    # (439619, 85800)
+    # (85800, 85800)
     # (459619, 85800)
-    # (450000, 94800
-    # (450001, 80001
-    # 434615, 90800
 
-    # Create intersect zone
-    if mbr(coordinate_5km_bound, tile):
-        intersect = coordinate_5km_bound.intersection(tile)
-        intersect_coords = np.array(intersect.exterior)
-        x_i, y_i = intersect.exterior.xy
-    else:
-        print("Coordinates are out of range")
+    intersect = coordinate_5km_bound.intersection(tile)
+    intersect_coords = np.array(intersect.exterior)
+    x_i, y_i = intersect.exterior.xy
 
     # Plot the tile, point, buffer and intersection zone
 
-    # Prints whether the coordinate lies on the tile.
-    if mbr(coordinate_5km_bound, tile):
+    # State whether the coordinate lies on the tile
+    if on_tile(coordinate_5km_bound, tile):
         print("Point is on tile")
     else:
-        print("Coordinates are out of range, please quit the application")
+        print("You are out of range, please quit the application")
 
-    if mbr(coordinate_5km_bound, tile):
-        masked_elevation_array, transformed = rasterio.mask.mask(elevation, [intersect], crop=True)
+    # If the buffer zone is within the tile, points outside the intersection zone are excluded.
+    if on_tile(coordinate_5km_bound, tile):
+        # mask the elevation area outside the buffer zone
+        masked_elevation_array, transformed = rasterio.mask.mask(elevation, [intersect], crop=False)
         highest_in_5km = np.amax(masked_elevation_array)
         print("The highest point within 5km is ", highest_in_5km, " meters high")
 
-    # Find index of maximum value from 2D numpy array
-    result = np.where(masked_elevation_array == np.amax(masked_elevation_array))
+    # file written to a csv
+    masked_elevation_array.tofile('masked_elevation_array.csv', sep=',', format='%10.5f')
 
-    print('Tuple of arrays returned : ', result)
-
-    print('List of coordinates of maximum value in Numpy array : ')
-    # zip the 2 arrays to get the exact coordinates
-    listOfCordinates = list(zip(result[0], result[1]))
-    # travese over the list of coordinates
-    for cord in listOfCordinates:
-        print(cord)
+    # Convert to pandas data frame
+    masked_elevation_array_df = pd.read_csv('masked_elevation_array.csv')
 
     # Potential Solution:
     # Write the masked elevation elevation array to a pandas data frame
     # Index the data frame for the specific value
-    # The value returned
+    # The value returned will have the index.
+    # Use this index to get the coordinates...
 
     """""
     Task 5: Map Plotting
