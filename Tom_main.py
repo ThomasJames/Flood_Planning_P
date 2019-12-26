@@ -73,6 +73,7 @@ if __name__ == "__main__":
     # The id of the later that we want to read.
     elevation_array = elevation.read(1)
     # Search the array for the highest point
+    elevation_array = elevation_array.resize(5, 5)
 
     """""
     Task1: User Input
@@ -108,10 +109,8 @@ if __name__ == "__main__":
     x_t, y_t = tile.exterior.xy
 
     # Some test coordinates
-    # (85800, 85800)
-    # (459619
-
-    # , 85800)
+    # (459619, 85800)
+    # (439619, 85800)
 
     intersect = coordinate_5km_bound.intersection(tile)
     intersect_coords = np.array(intersect.exterior)
@@ -130,21 +129,22 @@ if __name__ == "__main__":
         # mask the elevation area outside the buffer zone
         masked_elevation_array, transformed = rasterio.mask.mask(elevation, [intersect], crop=False)
         highest_in_5km = np.amax(masked_elevation_array)
-        x_h, y_h = zip(np.where(*masked_elevation_array == highest_in_5km))
+
+        # 5 Pixels for every m, bottom left hand corner starts at 425000, 75000
+        rescaled_masked_elevation_array = np.kron(masked_elevation_array, np.ones((5, 5)))
+
+        x_h, y_h = zip(np.where(*rescaled_masked_elevation_array == highest_in_5km))
 
     print("The highest point within 5km is ", highest_in_5km, " meters high")
-    print("The index of this value within the array is: ", x_h[0], ",", y_h[0])
 
+    e_h = ((x_h[0]) + 75000)
+    n_h = ((y_h[0]) + 425000)
 
+    e_h = e_h[1]
+    n_h = n_h[1]
 
-
-
-
-
-
-
-
-
+    print(e_h)
+    print(n_h)
 
     # file written to a csv
     # masked_elevation_array.tofile('masked_elevation_array.csv', sep=',', format='%10.5f')
@@ -176,6 +176,7 @@ if __name__ == "__main__":
     plt.scatter(east, north, color="black", alpha=1)  # Specific coordinate
     plt.plot(x_t, y_t, color="wheat", alpha=1)  # Tile
     plt.fill(x_c, y_c, color="skyblue", alpha=0.1)  # 50km Buffer at 40% opacity
+    plt.scatter(n_h, e_h, color="red", marker="x")
     plt.axis('equal')  # Ensures consistent scale
     plt.fill(x_i, y_i, color="tan", alpha=0.4)  # Intersection Zone
     plt.arrow(427500, 102000, 0, 1000, head_width=400, color="black")  # North Arrow
