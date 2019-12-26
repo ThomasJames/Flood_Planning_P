@@ -130,21 +130,26 @@ if __name__ == "__main__":
         masked_elevation_array, transformed = rasterio.mask.mask(elevation, [intersect], crop=False)
         highest_in_5km = np.amax(masked_elevation_array)
 
-        # 5 Pixels for every m, bottom left hand corner starts at 425000, 75000
+        # Reslcate the coordinates (5 Pixels for every m)
         rescaled_masked_elevation_array = np.kron(masked_elevation_array, np.ones((5, 5)))
 
+        # Extract the coordinates of the highest point
         x_h, y_h = zip(np.where(*rescaled_masked_elevation_array == highest_in_5km))
 
-    print("The highest point within 5km is ", highest_in_5km, " meters high")
-
+    # Adjust the coordinates
     e_h = ((x_h[0]) + 75000)
     n_h = ((y_h[0]) + 425000)
 
+    # Extract one of the sets of coordinates
     e_h = e_h[1]
     n_h = n_h[1]
 
     print(e_h)
     print(n_h)
+
+    # Prints details of the results
+    print("The highest point within 5km is at ", n_h, "north, and ",
+          e_h, "east", "at a height of: ", highest_in_5km, " meters")
 
     # file written to a csv
     # masked_elevation_array.tofile('masked_elevation_array.csv', sep=',', format='%10.5f')
