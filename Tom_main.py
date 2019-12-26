@@ -151,21 +151,7 @@ if __name__ == "__main__":
     print("The highest point within 5km is at ", n_h, "north, and ",
           e_h, "east", "at a height of: ", highest_in_5km, " meters")
 
-    # file written to a csv
-    # masked_elevation_array.tofile('masked_elevation_array.csv', sep=',', format='%10.5f')
 
-    # Convert to pandas data frame
-    # masked_elevation_array_df = pd.read_csv('masked_elevation_array.csv')
-
-    # i, c = np.where(masked_elevation_array == highest_in_5km)
-    # print(i)
-    # print(c)
-
-    # Potential Solution:
-    # Write the masked elevation elevation array to a pandas data frame
-    # Index the data frame for the specific value
-    # The value returned will have the index.
-    # Use this index to get the coordinates...
 
     """""
     Task 5: Map Plotting
