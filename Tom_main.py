@@ -133,8 +133,7 @@ if __name__ == "__main__":
         x_h, y_h = zip(np.where(*masked_elevation_array == highest_in_5km))
 
     print("The highest point within 5km is ", highest_in_5km, " meters high")
-    print("The index of this value within the array is: ", x_h[0], ","
-    y_h[0])
+    print("The index of this value within the array is: ", x_h[0], ",", y_h[0])
 
 
 
