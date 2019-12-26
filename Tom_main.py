@@ -109,7 +109,9 @@ if __name__ == "__main__":
 
     # Some test coordinates
     # (85800, 85800)
-    # (459619, 85800)
+    # (459619
+
+    # , 85800)
 
     intersect = coordinate_5km_bound.intersection(tile)
     intersect_coords = np.array(intersect.exterior)
@@ -128,13 +130,32 @@ if __name__ == "__main__":
         # mask the elevation area outside the buffer zone
         masked_elevation_array, transformed = rasterio.mask.mask(elevation, [intersect], crop=False)
         highest_in_5km = np.amax(masked_elevation_array)
-        print("The highest point within 5km is ", highest_in_5km, " meters high")
+        x_h, y_h = zip(np.where(*masked_elevation_array == highest_in_5km))
+
+    print("The highest point within 5km is ", highest_in_5km, " meters high")
+    print("The index of this value within the array is: ", x_h[0], ","
+    y_h[0])
+
+
+
+
+
+
+
+
+
+
+
 
     # file written to a csv
-    masked_elevation_array.tofile('masked_elevation_array.csv', sep=',', format='%10.5f')
+    # masked_elevation_array.tofile('masked_elevation_array.csv', sep=',', format='%10.5f')
 
     # Convert to pandas data frame
-    masked_elevation_array_df = pd.read_csv('masked_elevation_array.csv')
+    # masked_elevation_array_df = pd.read_csv('masked_elevation_array.csv')
+
+    # i, c = np.where(masked_elevation_array == highest_in_5km)
+    # print(i)
+    # print(c)
 
     # Potential Solution:
     # Write the masked elevation elevation array to a pandas data frame
