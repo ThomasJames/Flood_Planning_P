@@ -25,11 +25,9 @@ import geopandas as gpd
 import json
 from rasterio.mask import mask
 from shapely.wkt import loads
-import scipy
-from scipy import sparse
 from numpy import asarray
 from numpy import savetxt
-from affine import Affine
+
 
 # Function to take polygon, and coordinate
 # Returns True if the point lies within the polygon
@@ -50,8 +48,28 @@ def on_tile(c, b):
 def generate_coordinates(p_x, p_y):
     return list(map(lambda x, y: (x, y), p_x, p_y))
 
+"""""
+Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
+advising everyone to proceed by foot to the nearest high ground.
+To support this process, the emergency response authority wants you to develop a software to quickly advise people 
+of the quickest route that they should take to walk to the highest point of land within a 5km radius.
+"""""
 
 if __name__ == "__main__":
+
+    """""  TASKS 1 & 2
+    The application should ask the user to input their current location as a British National Grid coordinate
+    (easting and northing). Then, it should test whether the user is within a box (430000, 80000) and (465000, 95000).
+    If the input coor- dinate is outside this box, inform the user and quit the application. This is done because 
+    the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and the input point
+    must be at least 5km from the edge of this raster.
+    Identify the highest point within a 5km radius from the user location.
+    To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
+    elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
+    to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task
+    you can select a random point within 5km of the user.
+    """""
+
     # import elevation data
     elevation = rasterio.open('elevation/SZ.asc')
 
@@ -89,7 +107,7 @@ if __name__ == "__main__":
         # Lower right pixel coordinate
         lr = raster.index(*window[2:4])
         # Create the usable window dimensions
-        window_pixel = ((lr[0], ul[0] + 1), (ul[1], lr[1] + 1))
+        window_pixel = ((lr[0], ul[0]), (ul[1], lr[1]))
         # Read the window to a np subset array
         elevation_window = raster.read(1, window=window_pixel)
 
@@ -109,14 +127,18 @@ if __name__ == "__main__":
 
     #  Create a numpy array of the buffer zone
     masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
+    # Rescale the elevation data
     rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
+    # Extract the coordinates of the highest points
     y, x = (np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
-    print(x, y)
+    # Choose the first value
     x = (x[0])
     y = (y[0])
+    # Adjust the coordinates into the coordinate system
     easting = x + window[0]
     Northing = y + window[1]
 
+    # Important variables:
     print(np.amax(masked_elevation_data))
     print("elevation window shape is ", elevation_window.shape)
     print("The elevation window shape is: ", elevation_window.shape)
@@ -130,8 +152,39 @@ if __name__ == "__main__":
     # # (450000, 90000) # Problem with this
     # # (430000, 90000)
 
+    """""  Plotting
+    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey 
+    raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
+    starting point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the 
+    shortest route calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation
+     range, a north arrow, a scale bar, and a legend.
+    """""
+
+    # Plotting
+    # Needs a 10km limit around the user
+    # Needs to have an automatically adjusting North arrow and scale bar
+    plt.ylabel("Northings")
+    plt.xlabel("Eastings")
     plt.scatter(east, north, color="blue")
     plt.scatter(easting, Northing, color="red")  # High point
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
     rasterio.plot.show(elevation, alpha=0.5)
     plt.show()
+
+    """""  TASKS 3 & 4
+    Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest 
+    point identified in the previous step. To successfully complete this task you could use r-trees.
+    Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
+    to the highest point.
+    Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
+    is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
+    calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
+    you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
+    (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
+    inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
+    """""
+
+    # Load the ITN network
+    solent_itn_json = "itn/solent_itn.json"
+    with open(solent_itn_json, "r") as f:
+        solent_itn_json = json.load(f)
