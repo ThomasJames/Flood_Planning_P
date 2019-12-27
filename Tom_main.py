@@ -106,9 +106,8 @@ if __name__ == "__main__":
     y = (y[0])
     x = x * 5
     y = y * 5
-
-    x = x + window[0]
-    y = y + window[1]
+    x = x + window[1]
+    y = y + window[0]
 
     print(x)
     print(y)
@@ -124,3 +123,8 @@ if __name__ == "__main__":
     # # (459619, 85800)
     # # (439619, 85800)
     # # (450000, 90000)
+
+    rasterio.plot.show(elevation)
+    plt.scatter(east, north)
+    plt.scatter(y, x)
+    plt.show()
