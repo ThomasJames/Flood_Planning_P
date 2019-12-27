@@ -217,3 +217,12 @@ if __name__ == "__main__":
     solent_itn_json = "itn/solent_itn.json"
     with open(solent_itn_json, "r") as f:
         solent_itn_json = json.load(f)
+
+    # construct an index with the default construction
+    idx = index.Index()
+
+    # Create a bounding box
+    left, bottom, right, top = (0.0, 0.0, 1.0, 1.0)
+
+    # Insert an entry into the index:
+    idx.insert(0, (left, bottom, right, top))
