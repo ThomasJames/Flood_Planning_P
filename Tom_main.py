@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # # (439619, 85800)
     # # (450000, 90000)
 
-    rasterio.plot.show(elevation)
-    plt.scatter(east, north)
-    plt.scatter(y, x)
+    plt.scatter(east, north, color="blue")
+    plt.scatter(y, x, color="red")
+    rasterio.plot.show(elevation, alpha=0.5)
     plt.show()
