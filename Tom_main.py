@@ -66,6 +66,12 @@ if __name__ == "__main__":
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
+    buffer_zone = location.buffer(5000)
+    if on_tile(buffer_zone, tile):
+        print("Point is on tile")
+    else:
+        print("Please close the application")
+
     # Create an intersect polygon with the tile
     intersection_shape = location.buffer(5000).intersection(tile)
 
@@ -98,18 +104,18 @@ if __name__ == "__main__":
     mask = rasterio.features.rasterize(
         [(intersection_pixel_polygon, 0)],
         out_shape=elevation_window.shape,
-        all_touched=True,
+        all_touched=False,
     )
 
     #  Create a numpy array of the buffer zone
-    masked_elevation_data = np.ma.array(data=elevation_window, mask=mask.astype(bool))
+    masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
     rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
-    y, x = zip(np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
+    y, x = (np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
     print(x, y)
     x = (x[0])
     y = (y[0])
-    x = x + window[0]
-    y = y + window[1]
+    easting = x + window[0]
+    Northing = y + window[1]
 
     print(np.amax(masked_elevation_data))
     print("elevation window shape is ", elevation_window.shape)
@@ -121,11 +127,11 @@ if __name__ == "__main__":
     # # Some test coordinates
     # # (459619, 85800)
     # # (439619, 85800)
-    # # (450000, 90000)
+    # # (450000, 90000) # Problem with this
     # # (430000, 90000)
 
     plt.scatter(east, north, color="blue")
-    plt.scatter(x, y, color="red")  # High point
+    plt.scatter(easting, Northing, color="red")  # High point
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
     rasterio.plot.show(elevation, alpha=0.5)
     plt.show()
