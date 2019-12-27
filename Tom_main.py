@@ -137,15 +137,23 @@ if __name__ == "__main__":
     y = (y[0])
     # Adjust the coordinates into the coordinate system
     easting = x + window[0]
-    Northing = y + window[1]
+    northing = y + window[1]
+
+    # Create a shapely point for the highest point
+    highest_point_coord = Point(easting, northing)
+
+    # Calculate the distance that the user will have to travel
+    linear_distance_to_travel = highest_point_coord.distance(location) / 1000
 
     # Important variables:
+    print("The distance to travel in kilometers is: ", linear_distance_to_travel)
     print(np.amax(masked_elevation_data))
     print("elevation window shape is ", elevation_window.shape)
     print("The elevation window shape is: ", elevation_window.shape)
     print("Highest point on the window is", np.amax(elevation_window))
     print("Highest point in the buffer zone", np.amax(masked_elevation_data))
     print("The window bounds are: ", window)
+
 
     # # Some test coordinates
     # # (459619, 85800)
@@ -167,7 +175,7 @@ if __name__ == "__main__":
     plt.ylabel("Northings")
     plt.xlabel("Eastings")
     plt.scatter(east, north, color="blue")
-    plt.scatter(easting, Northing, color="red")  # High point
+    plt.scatter(easting, northing, color="red")  # High point
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
     # rasterio.plot.show(background, alpha=0.2)
     rasterio.plot.show(elevation, background, alpha=0.5)
