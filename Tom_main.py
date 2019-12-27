@@ -28,6 +28,7 @@ from shapely.wkt import loads
 from numpy import asarray
 from numpy import savetxt
 
+
 # Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
@@ -46,6 +47,7 @@ def generate_coordinates(p_x, p_y):
     except IOError:
         print("Unable to perform this operation")
 
+
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
 advising everyone to proceed by foot to the nearest high ground.
@@ -56,13 +58,16 @@ of the quickest route that they should take to walk to the highest point of land
 if __name__ == "__main__":
 
     """""  
-    TASKS 1 & 2
-    -----------
+    USER INPUT 
+    ----------
     The application should ask the user to input their current location as a British National Grid coordinate
     (easting and northing). Then, it should test whether the user is within a box (430000, 80000) and (465000, 95000).
     If the input coor- dinate is outside this box, inform the user and quit the application. This is done because 
     the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and the input point
     must be at least 5km from the edge of this raster.
+    
+    HIGHEST POINT IDENTIFICATION    
+    ----------------------------  
     Identify the highest point within a 5km radius from the user location.
     To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
     elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
@@ -168,10 +173,15 @@ if __name__ == "__main__":
     print("The window bounds are: ", window)
 
     # # Some test coordinates
-    # # (459619, 85800)
-    # # (439619, 85800)
-    # # (450000, 90000) # Problem with this
-    # # (430000, 90000)
+    # #
+    # # (85800, 439619) # Looks ok
+    # # (90000, 450000) # Out of range
+    # # (90000, 430000) # Out of range
+    # # (85500, 440619) # Looks ok
+    # # (85500, 460619) # Out of range
+    # # (85500, 450619) # Looks good
+    # # (90000, 450619) # Out of range
+    # # (92000, 460619) # In range but wrong
 
     """""  
     PLOTTING
@@ -196,14 +206,21 @@ if __name__ == "__main__":
     plt.show()
 
     """""  
-    TASKS 3 & 4
-    -----------
+    IDENTIFY THE NETWORK
+    --------------------
     Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest 
     point identified in the previous step. To successfully complete this task you could use r-trees.
     Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
     to the highest point.
+    
     Creating an index tutorial
     https://rtree.readthedocs.io/en/latest/tutorial.html#creating-an-index
+    
+    Worked example 
+    https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
+    
+    FIND THE SHORTEST ROUTE
+    -----------------------
     
     Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
     is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
@@ -226,3 +243,10 @@ if __name__ == "__main__":
 
     # Insert an entry into the index:
     idx.insert(0, (left, bottom, right, top))
+
+    """""
+    EXTENDING THE REGION
+    --------------------
+    The position of the user is restricted to a region in where the user must be more than 5km from the edge of the 
+    elevation raster. Write additional code to overcome this limitation.   
+    """""
