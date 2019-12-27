@@ -52,6 +52,9 @@ def generate_coordinates(p_x, p_y):
 
 
 if __name__ == "__main__":
+    # import elevation data
+    elevation = rasterio.open('elevation/SZ.asc')
+
     # Ask the user for their location
     print("Please input your location:")
     north, east = float(input("east: ")), float(input("north: "))
@@ -66,11 +69,12 @@ if __name__ == "__main__":
     # Create an intersect polygon with the tile
     intersection_shape = location.buffer(5000).intersection(tile)
 
+    # Get the buffer zone/ intersection coordinates
+    x_bi, y_bi = intersection_shape.exterior.xy
+
     # Assign the bounding box of the intersect shape to window
     window = intersection_shape.bounds
     print("window dimensions are: ", window)
-
-    elevation = rasterio.open('elevation/SZ.asc')
 
     # Create a numpy array subset of the elevation data
     with rasterio.open('elevation/SZ.asc') as raster:
@@ -99,18 +103,13 @@ if __name__ == "__main__":
 
     #  Create a numpy array of the buffer zone
     masked_elevation_data = np.ma.array(data=elevation_window, mask=mask.astype(bool))
-
-    # Extract the coordinates of the highest point
-    x, y = zip(np.where(masked_elevation_data == np.amax(masked_elevation_data)))
+    rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
+    y, x = zip(np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
+    print(x, y)
     x = (x[0])
     y = (y[0])
-    x = x * 5
-    y = y * 5
-    x = x + window[1]
-    y = y + window[0]
-
-    print(x)
-    print(y)
+    x = x + window[0]
+    y = y + window[1]
 
     print(np.amax(masked_elevation_data))
     print("elevation window shape is ", elevation_window.shape)
@@ -123,8 +122,10 @@ if __name__ == "__main__":
     # # (459619, 85800)
     # # (439619, 85800)
     # # (450000, 90000)
+    # # (430000, 90000)
 
     plt.scatter(east, north, color="blue")
-    plt.scatter(y, x, color="red")
+    plt.scatter(x, y, color="red")  # High point
+    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
     rasterio.plot.show(elevation, alpha=0.5)
     plt.show()
