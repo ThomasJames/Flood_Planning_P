@@ -28,12 +28,7 @@ from shapely.wkt import loads
 from numpy import asarray
 from numpy import savetxt
 
-
-# Function to take polygon, and coordinate
-# Returns True if the point lies within the polygon
-from sympy.utilities import pytest
-
-
+# Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
         if b.contains(c):
@@ -44,9 +39,12 @@ def on_tile(c, b):
         print("Unable to perform this operation")
 
 
-# Function to join lists into coordinates
+# Function to join lists into (x, y) coordinates
 def generate_coordinates(p_x, p_y):
-    return list(map(lambda x, y: (x, y), p_x, p_y))
+    try:
+        return list(map(lambda x, y: (x, y), p_x, p_y))
+    except IOError:
+        print("Unable to perform this operation")
 
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
@@ -70,8 +68,11 @@ if __name__ == "__main__":
     you can select a random point within 5km of the user.
     """""
 
-    # import elevation data
+    # Import elevation data
     elevation = rasterio.open('elevation/SZ.asc')
+
+    # Import the background map
+    background = rasterio.open('background/raster-50k_2724246.tif')
 
     # Ask the user for their location
     print("Please input your location:")
@@ -168,7 +169,8 @@ if __name__ == "__main__":
     plt.scatter(east, north, color="blue")
     plt.scatter(easting, Northing, color="red")  # High point
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
-    rasterio.plot.show(elevation, alpha=0.5)
+    # rasterio.plot.show(background, alpha=0.2)
+    rasterio.plot.show(elevation, background, alpha=0.5)
     plt.show()
 
     """""  TASKS 3 & 4
