@@ -1,13 +1,11 @@
-# JACK
-
-# First line
-
 
 import numpy as np
 import pandas as pd
 from pyproj import CRS
 from pyproj import Transformer
 import shapely
+from rtree.index import Index
+from shapely import geometry
 from shapely.geometry import Point
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
@@ -20,138 +18,242 @@ import rtree
 from rtree import index
 import networkx as nx
 import rasterio
+from rasterio import mask
+from rasterio.windows import Window
 import pyproj
 import numpy as np
 import geopandas as gpd
-import matplotlib.pyplot as plt
-from shapely.geometry import LineString
+import json
+from rasterio.mask import mask
+from shapely.wkt import loads
+from numpy import asarray
+from numpy import savetxt
 
 
-# All modules that can be used have been imported.
+# Function to test if any object is within a polygon
+def on_tile(c, b):
+    try:
+        if b.contains(c):
+            return True
+        else:
+            return False
+    except IOError:
+        print("Unable to perform this operation")
+
+
+# Function to join lists into list from 'list = [(x, y), (x, y)]'
+def generate_coordinates(p_x, p_y):
+    try:
+        return list(map(lambda x, y: (x, y), p_x, p_y))
+    except IOError:
+        print("Unable to perform this operation")
+
+
+"""""
+Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
+advising everyone to proceed by foot to the nearest high ground.
+To support this process, the emergency response authority wants you to develop a software to quickly advise people 
+of the quickest route that they should take to walk to the highest point of land within a 5km radius.
+"""""
 
 if __name__ == "__main__":
-    # Create variables containing the relevant data.
-    # elevation = rasterio.open("../material/elevation/SZ.asc")
-    # background = rasterio.open("../material/background/raster-50k_2724246.tif")
 
-    """""
-    Task1: User Input
+    """""  
+    USER INPUT 
+    ----------
     The application should ask the user to input their current location as a British National Grid coordinate
     (easting and northing). Then, it should test whether the user is within a box (430000, 80000) and (465000, 95000).
-    If the input coor- dinate is outside this box, inform the user and quit the application.
-    This is done because the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000)
-    and the input point must be at least 5km from the edge of this raster.
-    """""
+    If the input coor- dinate is outside this box, inform the user and quit the application. This is done because 
+    the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and the input point
+    must be at least 5km from the edge of this raster.
 
-    # Request coordinates from the user.
-    east = int(input("Input a osgb36 eastings coordinate: "))
-    north = int(input("Input a osgb36 nothings coordinate: "))
-
-    # Print the coordinates for reference
-    print("Coordinates are ", east, " east and ", north, "north")
-
-    # Assign the coordinates to a shapely point
-    coordinate = Point(east, north)
-    print(coordinate)
-
-    # create a minimum bounding box polygon with the specified coordinates
-    mbr = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
-    # Create the coordinates for the exterior
-    x, y = mbr.exterior.xy
-    # Plot the bounding box
-    plt.fill(x, y)
-    plt.show()
-
-
-    # Class to contain bounding methods
-    class Bounding:
-        # Minimum bounding method
-        def mbr(c):
-            if mbr.contains(c):
-                print("This point is on the tile")
-            else:
-                print("Please quit the application")
-
-
-    # Call the mbr method from the Bounding class
-    Bounding.mbr(coordinate)
-
-    """""
-    Task 2: Highest Point Identification
+    HIGHEST POINT IDENTIFICATION    
+    ----------------------------  
     Identify the highest point within a 5km radius from the user location.
     To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
     elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
-    to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task 
+    to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task
     you can select a random point within 5km of the user.
     """""
-    # import and view the elevation data
-    elevation = rasterio.open("elevation/SZ.asc")
-    # rasterio.plot.show(elevation)
 
-    # import and view the background data
-    background = rasterio.open("background/raster-50k_2724246.tif")
-    # rasterio.plot.show(background)
+    # Import elevation data
+    elevation = rasterio.open('elevation/SZ.asc')
 
-    # Import isle of wight data
-    isle_of_wight = gpd.read_file('shape/isle_of_wight.shp')
-    isle_of_wight.plot()
+    # Import the background map
+    background = rasterio.open('background/raster-50k_2724246.tif')
 
-    # access the value of this raster as a NumPy array
-    elevation.read(1)
-    print(elevation.height)
+    # Ask the user for their location
+    print("Please input your location:")
+    north, east = float(input("east: ")), float(input("north: "))
+    print(north, east)
 
-    # To find the point of intersection
-    coordinate.buffer(1).intersection(elevation)
+    # Create a buffer zone of 5km
+    location = Point(east, north)
 
-    # argmax / argmin - for rasterio return the min/max coordinates
-    # numy.amax function will find the maximum value.
-    # numpy.amax(a, axis=None, out=None, keepdims=<no value>, initial=<no value>)
-    # Aguments - a is the numpy array to find the maximum value,
+    # create a to spec bounding box "tile"
+    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
-    # Work out how much is 5km in coordinates the buffer around the coordinate
-    coordinate_5km_bound = coordinate.buffer(5000)
+    # Is the coordinate in the bounding box
+    buffer_zone = location.buffer(5000)
+    if on_tile(buffer_zone, tile):
+        print("Point is on tile")
+    else:
+        print("Please close the application")
 
-    # Create a line between the point of highest elevation and the
-    path = LineString([(coordinate_5km_bound), (1, 1)])
+    # Create an intersect polygon with the tile
+    intersection_shape = buffer_zone.intersection(tile)
 
-    # Find the instance of the line between the point and the highest point of elevation
-    # path.length
+    # Get the buffer zone/ intersection coordinates
+    x_bi, y_bi = intersection_shape.exterior.xy
 
-    # Links from Jake:
-    # Basic Rasterio
-    # https://rasterio.readthedocs.io/en/stable/quickstart.html
-    # To get min and max values
-    # https://thispointer.com/find-max-value-its-index-in-numpy-array-numpy-amax/ (page 11)
+    # Assign the bounding box of the intersect shape to window
+    window = intersection_shape.bounds
+    print("window dimensions are: ", window)
+
+    # Create a numpy array subset of the elevation data
+    with rasterio.open('elevation/SZ.asc') as raster:
+
+        # Upper Left pixel coordinate
+        ul = raster.index(*window[0:2])
+
+        # Lower right pixel coordinate
+        lr = raster.index(*window[2:4])
+
+        # Create the usable window dimensions
+        window_pixel = ((lr[0], ul[0]), (ul[1], lr[1]))
+
+        # Read the window to a np subset array
+        elevation_window = raster.read(1, window=window_pixel)
+
+        # Extract the x and y coordinates of the exterior
+        intersection_pixel_x, intersection_pixel_y = raster.index(*intersection_shape.exterior.xy)
+
+        # Generate the (x, y) coordinate format
+        intersection_pixel_coords = generate_coordinates(intersection_pixel_x, intersection_pixel_y)
+
+        # Generate a 'shapley' polygon
+        intersection_pixel_polygon = Polygon(intersection_pixel_coords)
+
+        # Rasterize the geometry
+        mask = rasterio.features.rasterize(
+            [(intersection_pixel_polygon, 0)],  # Masking shape
+            out_shape=elevation_window.shape,
+            all_touched=False
+        )
+
+    #  Create a numpy array of the buffer zone todo: does this actually mask the outter bounds?
+    masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
+
+    # Rescale the elevation data
+    rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
+
+    # Extract the coordinates of the highest points
+    y, x = (np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
+
+    # Choose the first value
+    x = (x[0])
+    y = (y[0])
+
+    # Adjust the coordinates into the coordinate system
+    easting = x + window[0]
+    northing = y + window[1]
+
+    # Create a shapely point for the highest point
+    highest_point_coord = Point(easting, northing)
+
+    # Calculate the distance that the user will have to travel
+    linear_distance_to_travel = highest_point_coord.distance(location) / 1000
+
+    # Important variables:
+    print("The distance to travel in kilometers is: ", linear_distance_to_travel)
+    print("Highest point in masked elevation data", np.amax(masked_elevation_data))
+    print("elevation window shape is ", elevation_window.shape)
+    print("The elevation window shape is: ", elevation_window.shape)
+    print("Highest point on the window is", np.amax(elevation_window))
+    print("Highest point in the buffer zone", np.amax(masked_elevation_data))
+    print("The window bounds are: ", window)
+    print("the dataset crs is: ", elevation.crs)
+
+    # Some test coordinates
+    # (85800, 439619) # Looks ok
+    # (90000, 450000) # Out of range
+    # (90000, 430000) # Out of range
+    # (85500, 440619) # Looks ok
+    # (85500, 460619) # Out of range
+    # (85500, 450619) # Looks good
+    # (90000, 450619) # Out of range
+    # (92000, 460619) # In range but wrong
 
     """""  
-    Task 3: Nearest Integrated Transport Network
-    Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest
-     point identified in the previous step. To successfully complete this task you could use r-trees.
+    PLOTTING
+    --------
+    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey 
+    raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
+    starting point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the 
+    shortest route calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation
+     range, a north arrow, a scale bar, and a legend.
     """""
 
-    """""  
-    Task 4: Shortest Path
-    Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest to
-    the highest point. Naismith’s rule states that a reasonably fit person is capable of waking at Page 2 of 5
-    5km/hr and that an additional minute is added for every 10 meters of climb (i.e., ascent not descent).
-    To successfully complete this task you could calculate the weight iterating through each link segment. Moreover, if
-    you are not capable to solve this task you could (1) approximate this algorithm by calculating the weight using
-    only the start and end node elevation; (2) identify the shortest distance from the node nearest the user to the
-    node nearest the highest point using only links in the ITN.
-    To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
-    """""
+    # Plotting
+    # todo: a 10km limit around the user
+    # todo: an automatically adjusting North arrow and scale bar
+    plt.ylabel("Northings")
+    plt.xlabel("Eastings")
+    plt.scatter(east, north, color="blue")
+    plt.scatter(easting, northing, color="red")  # High point
+    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
+    # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
+    rasterio.plot.show(elevation, background, alpha=0.5)
+    plt.show()
 
     """""  
-    Task 5: Map Plotting
-    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey raster
-    (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s starting
-    point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the shortest route
-    calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation range, a north
-    arrow, a scale bar, and a legend.
+    IDENTIFY THE NETWORK
+    --------------------
+    Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest 
+    point identified in the previous step. To successfully complete this task you could use r-trees.
+    Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
+    to the highest point.
+
+    Creating an index tutorial
+    https://rtree.readthedocs.io/en/latest/tutorial.html#creating-an-index
+
+    Worked example 
+    https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
+
+
+
+    FIND THE SHORTEST ROUTE
+    -----------------------
+
+    Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
+    is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
+    calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
+    you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
+    (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
+    inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
 
-    """""  
-    Task 6: Extend the Region
-    The position of the user is restricted to a region in where the user must be more than 5km from the edge of the
-    elevation raster. Write additional code to overcome this limitation.
+    # Load the ITN network
+    solent_itn_json = "itn/solent_itn.json"
+    with open(solent_itn_json, "r") as f:
+        solent_itn_json = json.load(f)
+
+    # Walk down the tree (quad tree or R-Tree, etc) until you find the lowest node that contains the “search point”.
+    # Then look at the parent of that node, and check all points that is contained within the parent
+    # (including sub notes) If you have not found enough points, then move on to the parent’s parent etc.
+
+    # construct an index with the default construction
+    idx = index.Index()
+
+    # Create a bounding box
+    left, bottom, right, top = (0.0, 0.0, 1.0, 1.0)
+
+    # Insert an entry into the index:
+    idx.insert(0, (left, bottom, right, top))
+
+    """""
+    EXTENDING THE REGION
+    --------------------
+    The position of the user is restricted to a region in where the user must be more than 5km from the edge of the 
+    elevation raster. Write additional code to overcome this limitation.   
     """""
