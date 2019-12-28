@@ -172,7 +172,7 @@ if __name__ == "__main__":
     print("Highest point on the window is", np.amax(elevation_window))
     print("Highest point in the buffer zone", np.amax(masked_elevation_data))
     print("The window bounds are: ", window)
-    print("the dataset crs is: ", elevation.crs)
+    print("the dataset crs is: ", elevation.crs[0])
 
     # Some test coordinates
     # (85800, 439619) # Looks ok
@@ -219,19 +219,7 @@ if __name__ == "__main__":
 
     Worked example 
     https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
-
-
-
-    FIND THE SHORTEST ROUTE
-    -----------------------
-
-    Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
-    is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
-    calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
-    you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
-    (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
-    inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
-    """""
+    """
 
     # Load the ITN network
     solent_itn_json = "itn/solent_itn.json"
@@ -251,9 +239,33 @@ if __name__ == "__main__":
     # Insert an entry into the index:
     idx.insert(0, (left, bottom, right, top))
 
+    """
+    FIND THE SHORTEST ROUTE
+    -----------------------
+
+    Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
+    is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
+    calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
+    you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
+    (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
+    inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
+    """""
+
     """""
     EXTENDING THE REGION
     --------------------
     The position of the user is restricted to a region in where the user must be more than 5km from the edge of the 
     elevation raster. Write additional code to overcome this limitation.   
     """""
+    # Potential Solutions:
+    # Create a function that generates a bounding box that adjusted to the limits of the existing raster.
+    # If the user is outside the region, tell them.
+    # Create a directory of raster files that correspond to the users coordinates, apply the relevant tile.
+
+    """""
+    ADDITONAL IDEAS 
+    ---------------
+    """""
+    # Simple GUI to ask the user if they are walking / running / cycling
+    # Return an answer if the user was on a bike or running
+    # Return a value for the estimated number of steps the user will take
