@@ -75,15 +75,15 @@ if __name__ == "__main__":
     you can select a random point within 5km of the user.
     """""
 
-    # Import elevation data
+    # Import elevation map
     elevation = rasterio.open('elevation/SZ.asc')
 
     # Import the background map
     background = rasterio.open('background/raster-50k_2724246.tif')
 
     # Ask the user for their location
-    print("Please input your location:")
-    north, east = float(input("east: ")), float(input("north: "))
+    print("Please input your location")
+    north, east = int(input("east: ")), int(input("north: "))
     print(north, east)
 
     # Create a buffer zone of 5km
@@ -94,6 +94,8 @@ if __name__ == "__main__":
 
     # Is the coordinate in the bounding box
     buffer_zone = location.buffer(5000)
+
+    # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
         print("Point is on tile")
     else:
@@ -124,7 +126,7 @@ if __name__ == "__main__":
         # Read the window to a np subset array
         elevation_window = raster.read(1, window=window_pixel)
 
-        # Extract the x and y coordinates of the exterior
+        # Extract the x and y pixel coordinates of the exterior
         intersection_pixel_x, intersection_pixel_y = raster.index(*intersection_shape.exterior.xy)
 
         # Generate the (x, y) coordinate format
@@ -143,22 +145,27 @@ if __name__ == "__main__":
     #  Create a numpy array of the buffer zone todo: does this actually mask the outter bounds?
     masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
 
-    # Rescale the elevation data
+    # Rescale the elevation data todo: is there a function to extract the coordinates without rescale
     rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
+    y, x = (np.where(masked_elevation_data == np.amax(masked_elevation_data)))
+    print(x)
+    print(y)
 
-    # Extract the coordinates of the highest points
+    # Extract the coordinates of the highest points #
     y, x = (np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
+    print(y)
+    print(x)
 
     # Choose the first value
     x = (x[0])
     y = (y[0])
 
     # Adjust the coordinates into the coordinate system
-    easting = x + window[0]
-    northing = y + window[1]
+    highest_east = x + window[0]
+    highest_north = y + window[1]
 
     # Create a shapely point for the highest point
-    highest_point_coord = Point(easting, northing)
+    highest_point_coord = Point(highest_east, highest_north)
 
     # Calculate the distance that the user will have to travel
     linear_distance_to_travel = highest_point_coord.distance(location) / 1000
@@ -198,9 +205,10 @@ if __name__ == "__main__":
     # todo: an automatically adjusting North arrow and scale bar
     plt.ylabel("Northings")
     plt.xlabel("Eastings")
+    plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
     plt.scatter(east, north, color="blue")
-    plt.scatter(easting, northing, color="red")  # High point
-    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
+    plt.scatter(highest_east, highest_north, color="red")  # High point
+    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     rasterio.plot.show(elevation, background, alpha=0.5)
     plt.show()
@@ -219,8 +227,6 @@ if __name__ == "__main__":
     Worked example 
     https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
     
-     
-    
     FIND THE SHORTEST ROUTE
     -----------------------
     
@@ -237,18 +243,36 @@ if __name__ == "__main__":
     with open(solent_itn_json, "r") as f:
         solent_itn_json = json.load(f)
 
-    # Walk down the tree (quad tree or R-Tree, etc) until you find the lowest node that contains the “search point”.
+    # Walk down the tree Rtree until you find the lowest node that contains the “search point”.
     # Then look at the parent of that node, and check all points that is contained within the parent
     # (including sub notes) If you have not found enough points, then move on to the parent’s parent etc.
 
     # construct an index with the default construction
     idx = index.Index()
 
-    # Create a bounding box
-    left, bottom, right, top = (0.0, 0.0, 1.0, 1.0)
+    # List of sample points to test how the function works:
+    # But we want to access all the points of the ITN nodes
+    points = [(90000, 450619), (85500, 440619), (92000, 460619)]
 
-    # Insert an entry into the index:
-    idx.insert(0, (left, bottom, right, top))
+    # Add the points to the index
+    for n, point in enumerate(points):
+        idx.insert(n, point, str(n))
+
+    # The query start point is the user location:
+    query_start = (east, north)
+
+    # The query finish point is the highest point
+    query_finish = (highest_east, highest_north)
+
+    # Find the nearest value to the start
+    closest_node_to_start = list(idx.nearest(query_start, num_results=1, objects=True))
+
+    # Find the nearest value to the finish
+    closest_node_to_finish = list(idx.nearest(query_finish, num_results=1, objects=True))
+
+    # print out the values
+    print(closest_node_to_start[0])
+    print(closest_node_to_finish[0])
 
     """""
     EXTENDING THE REGION
@@ -256,3 +280,16 @@ if __name__ == "__main__":
     The position of the user is restricted to a region in where the user must be more than 5km from the edge of the 
     elevation raster. Write additional code to overcome this limitation.   
     """""
+
+    # Potential Solutions:
+    # Create a function that generates a bounding box that adjusts to the limits of the existing raster.
+    # If the user is outside the region, tell them.
+    # Create a directory of raster files that correspond to the users coordinates, apply the relevant tile.
+
+    """""
+    ADDITONAL IDEAS 
+    ---------------
+    """""
+    # Simple GUI to ask the user if they are walking / running / cycling
+    # Return an answer if the user was on a bike or running
+    # Return a value for the estimated number of steps the user will take
