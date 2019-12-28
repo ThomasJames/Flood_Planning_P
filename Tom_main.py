@@ -128,8 +128,8 @@ if __name__ == "__main__":
         intersection_pixel_x, intersection_pixel_y = raster.index(*intersection_shape.exterior.xy)
 
         # Generate the (x, y) coordinate format
-        intersection_pixel_coords = generate_coordinates(intersection_pixel_x, intersection_pixel_y
-                                                         )
+        intersection_pixel_coords = generate_coordinates(intersection_pixel_x, intersection_pixel_y)
+
         # Generate a 'shapley' polygon
         intersection_pixel_polygon = Polygon(intersection_pixel_coords)
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             all_touched=False
         )
 
-    #  Create a numpy array of the buffer zone
+    #  Create a numpy array of the buffer zone todo: does this actually mask the outter bounds?
     masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
 
     # Rescale the elevation data
@@ -171,17 +171,17 @@ if __name__ == "__main__":
     print("Highest point on the window is", np.amax(elevation_window))
     print("Highest point in the buffer zone", np.amax(masked_elevation_data))
     print("The window bounds are: ", window)
+    print("the dataset crs is: ", elevation.crs)
 
-    # # Some test coordinates
-    # #
-    # # (85800, 439619) # Looks ok
-    # # (90000, 450000) # Out of range
-    # # (90000, 430000) # Out of range
-    # # (85500, 440619) # Looks ok
-    # # (85500, 460619) # Out of range
-    # # (85500, 450619) # Looks good
-    # # (90000, 450619) # Out of range
-    # # (92000, 460619) # In range but wrong
+    # Some test coordinates
+    # (85800, 439619) # Looks ok
+    # (90000, 450000) # Out of range
+    # (90000, 430000) # Out of range
+    # (85500, 440619) # Looks ok
+    # (85500, 460619) # Out of range
+    # (85500, 450619) # Looks good
+    # (90000, 450619) # Out of range
+    # (92000, 460619) # In range but wrong
 
     """""  
     PLOTTING
@@ -194,14 +194,14 @@ if __name__ == "__main__":
     """""
 
     # Plotting
-    # Needs a 10km limit around the user
-    # Needs to have an automatically adjusting North arrow and scale bar
+    # todo: a 10km limit around the user
+    # todo: an automatically adjusting North arrow and scale bar
     plt.ylabel("Northings")
     plt.xlabel("Eastings")
     plt.scatter(east, north, color="blue")
     plt.scatter(easting, northing, color="red")  # High point
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
-    # rasterio.plot.show(background, alpha=0.2)
+    # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     rasterio.plot.show(elevation, background, alpha=0.5)
     plt.show()
 
@@ -219,6 +219,8 @@ if __name__ == "__main__":
     Worked example 
     https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
     
+     
+    
     FIND THE SHORTEST ROUTE
     -----------------------
     
@@ -234,6 +236,10 @@ if __name__ == "__main__":
     solent_itn_json = "itn/solent_itn.json"
     with open(solent_itn_json, "r") as f:
         solent_itn_json = json.load(f)
+
+    # Walk down the tree (quad tree or R-Tree, etc) until you find the lowest node that contains the “search point”.
+    # Then look at the parent of that node, and check all points that is contained within the parent
+    # (including sub notes) If you have not found enough points, then move on to the parent’s parent etc.
 
     # construct an index with the default construction
     idx = index.Index()
