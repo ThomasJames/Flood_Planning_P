@@ -251,12 +251,28 @@ if __name__ == "__main__":
     # Check the coordinates
     print(road_nodes_list)
 
+    # They need to be flipped
+    # Create a list of only eastings
+    node_eastings = []
+    for i in road_nodes_list:
+        node_eastings.append(i[0])
+    print(node_eastings)
+
+    # create a list of only northings
+    node_northings = []
+    for i in road_nodes_list:
+        node_northings.append(i[1])
+    print(node_northings)
+
+    flipped_road_nodes_list = generate_coordinates(node_northings, node_eastings)
+    print(flipped_road_nodes_list)
+
     # construct an index with the default construction
     idx = index.Index()
 
     # Add the points to the index
-    for n, point in enumerate(road_nodes_list):
-        idx.insert(n, point, str(n))
+    for n, node in enumerate(flipped_road_nodes_list):
+        idx.insert(n, node, str(n))
 
     # The query start point is the user location:
     query_start = (east, north)
@@ -265,14 +281,16 @@ if __name__ == "__main__":
     query_finish = (highest_east, highest_north)
 
     # Find the nearest value to the start
-    closest_node_to_start = idx.nearest(query_start, num_results=1, objects=True)
+    for i in idx.nearest(query_start, 1):
+        print(i)
 
     # Find the nearest value to the finish
-    closest_node_to_finish = idx.nearest(query_finish, num_results=1, objects=True)
+    for i in idx.nearest(query_finish, 1):
+        print(i)
 
     # print out the values
-    print(closest_node_to_start)
-    print(closest_node_to_finish)
+    # print(list(closest_node_to_start))
+    # print(list(closest_node_to_finish))
 
     """""  
     FIND THE SHORTEST ROUTE
