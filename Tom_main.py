@@ -97,6 +97,13 @@ if __name__ == "__main__":
     buffer_zone = location.buffer(5000)
 
     # Create a 10km buffer for plotting purposes
+    plot_buffer = location.buffer(10000)
+
+    # Get the bounds for the 10km limits
+    plot_buffer_bounds = plot_buffer.bounds
+    print(plot_buffer_bounds)
+
+    # todo: Problem - POLYGON does not supprot indexing - Need to resolve
 
     # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
@@ -298,7 +305,8 @@ if __name__ == "__main__":
     # todo: an automatically adjusting North arrow and scale bar
     plt.ylabel("Northings")
     plt.xlabel("Eastings")
-    # ax.set(xlim=(xmin, xmax), ylim=(ymin, ymax))
+    plt.ylim((plot_buffer[1], plot_buffer[3]))
+    plt.xlim((plot_buffer[0], plot_buffer[2]))
     plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
     plt.scatter(east, north, color="black", marker="^")
     plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1], color="black", marker="*")
