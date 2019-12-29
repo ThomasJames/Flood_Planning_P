@@ -244,10 +244,6 @@ if __name__ == "__main__":
     for i in idx.nearest(query_finish, 1):
         nearest_node_to_finish = road_nodes_list[i]
 
-    # print out the values
-    # print(list(closest_node_to_start))
-    # print(list(closest_node_to_finish))
-
     """""  
     FIND THE SHORTEST ROUTE
     -----------------------
