@@ -146,6 +146,7 @@ if __name__ == "__main__":
     masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
 
     # Rescale the elevation data todo: is there a function to extract the coordinates without rescale
+    # todo: maybe we could use pyproj/projection transformations?
     rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
     y, x = (np.where(masked_elevation_data == np.amax(masked_elevation_data)))
     print(x)
@@ -178,7 +179,6 @@ if __name__ == "__main__":
     print("Highest point on the window is", np.amax(elevation_window))
     print("Highest point in the buffer zone", np.amax(masked_elevation_data))
     print("The window bounds are: ", window)
-    print("the dataset crs is: ", elevation.crs)
 
     # Some test coordinates
     # (85800, 439619) # Looks ok
@@ -197,7 +197,16 @@ if __name__ == "__main__":
     raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
     starting point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the 
     shortest route calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation
-     range, a north arrow, a scale bar, and a legend.
+    range, a north arrow, a scale bar, and a legend.
+    To create a GeoDataFrame of the shortest path and then display it on top of a raster.
+    We shall be using the following packages and the background map. 
+    import rasterio
+    import pyproj
+    import numpy as np
+    import geopandas as gpd
+    import matplotlib.pyplot as plt
+    import cartopy.crs as ccrs
+    from shapely.geometry import LineString  
     """""
 
     # Plotting
@@ -226,16 +235,6 @@ if __name__ == "__main__":
     
     Worked example 
     https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
-    
-    FIND THE SHORTEST ROUTE
-    -----------------------
-    
-    Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
-    is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
-    calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
-    you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
-    (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
-    inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
 
     # Load the ITN network
@@ -243,9 +242,14 @@ if __name__ == "__main__":
     with open(solent_itn_json, "r") as f:
         solent_itn_json = json.load(f)
 
-    # Walk down the tree Rtree until you find the lowest node that contains the “search point”.
-    # Then look at the parent of that node, and check all points that is contained within the parent
-    # (including sub notes) If you have not found enough points, then move on to the parent’s parent etc.
+    # We now create a graph from the dictionary
+    g = nx.Graph()
+    road_links = solent_itn_json['roadlinks']
+    for link in road_links:
+        g.add_edge(road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'])
+
+    nx.draw(g, node_size=1)
+
 
     # construct an index with the default construction
     idx = index.Index()
@@ -265,14 +269,38 @@ if __name__ == "__main__":
     query_finish = (highest_east, highest_north)
 
     # Find the nearest value to the start
-    closest_node_to_start = list(idx.nearest(query_start, num_results=1, objects=True))
+    closest_node_to_start = idx.nearest(query_start, num_results=1, objects=True)
 
     # Find the nearest value to the finish
-    closest_node_to_finish = list(idx.nearest(query_finish, num_results=1, objects=True))
+    closest_node_to_finish = idx.nearest(query_finish, num_results=1, objects=True)
 
     # print out the values
-    print(closest_node_to_start[0])
-    print(closest_node_to_finish[0])
+    print(closest_node_to_start)
+    print(closest_node_to_finish)
+
+    """""  
+    FIND THE SHORTEST ROUTE
+    -----------------------
+
+    Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
+    is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
+    calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
+    you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
+    (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
+    inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
+    """""
+
+    # Arbitrary test coordinates
+    start = "osgb5000005124619786"
+    end = "osgb4000000029329827"
+
+    # Find the shortest path
+    # todo: How do you access weights based gradient?
+    path = nx.dijkstra_path(g, source=start, target=end, weight="weight")
+    print(path)
+
+
+
 
     """""
     EXTENDING THE REGION
