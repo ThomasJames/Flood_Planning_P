@@ -242,24 +242,20 @@ if __name__ == "__main__":
     with open(solent_itn_json, "r") as f:
         solent_itn_json = json.load(f)
 
-    # We now create a graph from the dictionary
-    g = nx.Graph()
-    road_links = solent_itn_json['roadlinks']
-    for link in road_links:
-        g.add_edge(road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'])
+    # Create a list formed of all the 'roadnodes' coordinates
+    road_nodes = road_links = solent_itn_json['roadnodes']
+    road_nodes_list = []
+    for nodes in road_nodes:
+        road_nodes_list.append(road_nodes[nodes]["coords"])
 
-    nx.draw(g, node_size=1)
-
+    # Check the coordinates
+    print(road_nodes_list)
 
     # construct an index with the default construction
     idx = index.Index()
 
-    # List of sample points to test how the function works:
-    # But we want to access all the points of the ITN nodes
-    points = [(90000, 450619), (85500, 440619), (92000, 460619)]
-
     # Add the points to the index
-    for n, point in enumerate(points):
+    for n, point in enumerate(road_nodes_list):
         idx.insert(n, point, str(n))
 
     # The query start point is the user location:
@@ -290,17 +286,17 @@ if __name__ == "__main__":
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
 
-    # Arbitrary test coordinates
-    start = "osgb5000005124619786"
-    end = "osgb4000000029329827"
-
     # Find the shortest path
     # todo: How do you access weights based gradient?
-    path = nx.dijkstra_path(g, source=start, target=end, weight="weight")
-    print(path)
+    # path = nx.dijkstra_path(g, source=start, target=end, weight="weight")
+    # print(path)
 
-
-
+    # The first step is to iterate through each of the nodes on the shortest path calculated. Ignore the first node, but
+    # instead assign it to a variable called first_node. Starting with the second node, we find the fid of road link
+    # that connects the first_node and node. Knowing the roadlink fid, we can find the coordinates and make a shapely
+    # LineString object. The final step of each iteration is to set first_node so that it can be used in the next
+    # iteration. On each iteration we append the feature id and the geometry to two lists links and geom which are used
+    # to build the path_gpd GeoDataFrame.
 
     """""
     EXTENDING THE REGION
