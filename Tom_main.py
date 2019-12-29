@@ -148,22 +148,23 @@ if __name__ == "__main__":
     # Rescale the elevation data todo: is there a function to extract the coordinates without rescale
     # todo: maybe we could use pyproj/projection transformations?
     rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
-    y, x = (np.where(masked_elevation_data == np.amax(masked_elevation_data)))
-    print(x)
-    print(y)
+    highest_east_index, highest_north_index = (np.where(masked_elevation_data == np.amax(masked_elevation_data)))
+    print(highest_east_index)
+    print(highest_north_index)
 
     # Extract the coordinates of the highest points #
-    y, x = (np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
-    print(y)
-    print(x)
+    highest_east_index, highest_north_index = (
+        np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
+    print(highest_north_index)
+    print(highest_east_index)
 
     # Choose the first value
-    x = (x[0])
-    y = (y[0])
+    highest_east_index = (highest_east_index[0])
+    highest_north_index = (highest_north_index[0])
 
     # Adjust the coordinates into the coordinate system
-    highest_east = x + window[0]
-    highest_north = y + window[1]
+    highest_east = highest_east_index + window[0]
+    highest_north = highest_north_index + window[1]
 
     # Create a shapely point for the highest point
     highest_point_coord = Point(highest_east, highest_north)
@@ -190,37 +191,6 @@ if __name__ == "__main__":
     # (90000, 450619) # Out of range
     # (92000, 460619) # In range but wrong
 
-    """""  
-    PLOTTING
-    --------
-    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey 
-    raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
-    starting point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the 
-    shortest route calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation
-    range, a north arrow, a scale bar, and a legend.
-    To create a GeoDataFrame of the shortest path and then display it on top of a raster.
-    We shall be using the following packages and the background map. 
-    import rasterio
-    import pyproj
-    import numpy as np
-    import geopandas as gpd
-    import matplotlib.pyplot as plt
-    import cartopy.crs as ccrs
-    from shapely.geometry import LineString  
-    """""
-
-    # Plotting
-    # todo: a 10km limit around the user
-    # todo: an automatically adjusting North arrow and scale bar
-    plt.ylabel("Northings")
-    plt.xlabel("Eastings")
-    plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
-    plt.scatter(east, north, color="blue")
-    plt.scatter(highest_east, highest_north, color="red")  # High point
-    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
-    # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
-    rasterio.plot.show(elevation, background, alpha=0.5)
-    plt.show()
 
     """""  
     IDENTIFY THE NETWORK
@@ -251,42 +221,28 @@ if __name__ == "__main__":
     # Check the coordinates
     print(road_nodes_list)
 
-    # They need to be flipped
-    # Create a list of only eastings
-    node_eastings = []
-    for i in road_nodes_list:
-        node_eastings.append(i[0])
-    print(node_eastings)
-
-    # create a list of only northings
-    node_northings = []
-    for i in road_nodes_list:
-        node_northings.append(i[1])
-    print(node_northings)
-
-    flipped_road_nodes_list = generate_coordinates(node_northings, node_eastings)
-    print(flipped_road_nodes_list)
-
     # construct an index with the default construction
     idx = index.Index()
 
-    # Add the points to the index
-    for n, node in enumerate(flipped_road_nodes_list):
-        idx.insert(n, node, str(n))
+    # Insert the points into the index
+    for i, p in enumerate(road_nodes_list):
+        idx.insert(i, p + p, p)
 
     # The query start point is the user location:
     query_start = (east, north)
+    print(query_start)
 
     # The query finish point is the highest point
     query_finish = (highest_east, highest_north)
+    print(query_finish)
 
     # Find the nearest value to the start
     for i in idx.nearest(query_start, 1):
-        print(i)
+        nearest_node_to_start = road_nodes_list[i]
 
     # Find the nearest value to the finish
     for i in idx.nearest(query_finish, 1):
-        print(i)
+        nearest_node_to_finish = road_nodes_list[i]
 
     # print out the values
     # print(list(closest_node_to_start))
@@ -315,6 +271,40 @@ if __name__ == "__main__":
     # LineString object. The final step of each iteration is to set first_node so that it can be used in the next
     # iteration. On each iteration we append the feature id and the geometry to two lists links and geom which are used
     # to build the path_gpd GeoDataFrame.
+
+    """""  
+    PLOTTING
+    --------
+    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey 
+    raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
+    starting point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the 
+    shortest route calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation
+    range, a north arrow, a scale bar, and a legend.
+    To create a GeoDataFrame of the shortest path and then display it on top of a raster.
+    We shall be using the following packages and the background map. 
+    import rasterio
+    import pyproj
+    import numpy as np
+    import geopandas as gpd
+    import matplotlib.pyplot as plt
+    import cartopy.crs as ccrs
+    from shapely.geometry import LineString  
+    """""
+
+    # Plotting
+    # todo: a 10km limit around the user
+    # todo: an automatically adjusting North arrow and scale bar
+    plt.ylabel("Northings")
+    plt.xlabel("Eastings")
+    plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    plt.scatter(east, north, color="blue")
+    plt.scatter(highest_east, highest_north, color="red")  # High point
+    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
+    plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1])
+    plt.scatter(nearest_node_to_finish[0], nearest_node_to_finish[1])
+    # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
+    rasterio.plot.show(elevation, background, alpha=0.5)
+    plt.show()
 
     """""
     EXTENDING THE REGION
