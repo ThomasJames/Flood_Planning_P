@@ -293,11 +293,12 @@ if __name__ == "__main__":
     plt.ylabel("Northings")
     plt.xlabel("Eastings")
     plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
-    plt.scatter(east, north, color="blue")
-    plt.scatter(highest_east, highest_north, color="red")  # High point
+    plt.scatter(east, north, color="black", marker="^")
+    plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1], color="black", marker="*")
+    plt.scatter(highest_east, highest_north, color="red", marker="^")
+    plt.scatter(nearest_node_to_finish[0], nearest_node_to_finish[1], color="red", marker="*")
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
-    plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1])
-    plt.scatter(nearest_node_to_finish[0], nearest_node_to_finish[1])
+
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     rasterio.plot.show(elevation, background, alpha=0.5)
     plt.show()
