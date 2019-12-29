@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 import pandas as pd
 from pyproj import CRS
 from pyproj import Transformer
@@ -92,14 +93,19 @@ if __name__ == "__main__":
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
-    # Is the coordinate in the bounding box
+    # Create a 5km buffer
     buffer_zone = location.buffer(5000)
+
+    # Create a 10km buffer for plotting purposes
 
     # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
         print("Point is on tile")
     else:
+        # The user is advised to quit the application
         print("Please close the application")
+        # The code stops running
+        sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection(tile)
@@ -292,6 +298,7 @@ if __name__ == "__main__":
     # todo: an automatically adjusting North arrow and scale bar
     plt.ylabel("Northings")
     plt.xlabel("Eastings")
+    # ax.set(xlim=(xmin, xmax), ylim=(ymin, ymax))
     plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
     plt.scatter(east, north, color="black", marker="^")
     plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1], color="black", marker="*")
