@@ -30,15 +30,15 @@ from numpy import asarray
 from numpy import savetxt
 
 # Function to test if the user is on the polygon
-def on_land(pol, poi):
-    try:
-        if pol.contains(poi):
-            return True
-        else:
-            return False
-    except IOError:
-        print("Unable to perform this operation")
-
+#def on_land(pol, poi):
+#    try:
+#        if pol.contains(poi):
+#            return True
+#        else:
+#            return False
+#    except IOError:
+#        print("Unable to perform this operation")
+#
 # Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
@@ -104,6 +104,10 @@ if __name__ == "__main__":
     pt1 = Point(north, east)
     x, y = pt1.xy
     polygon = shape_file.geometry
+    #polygon.contains(pt1)
+    #shape_file.plot()
+    print(polygon)
+
     #plt.plot(x, y, 'ro')
     #polygon.contains(pt1)
 
@@ -123,7 +127,7 @@ if __name__ == "__main__":
     plot_buffer_bounds = tuple(plot_buffer.bounds)
     print(plot_buffer_bounds[0])
 
-    # todo: Problem - POLYGON does not supprot indexing - Need to resolve
+    # todo: Problem - POLYGON does not support indexing - Need to resolve
 
     # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
@@ -133,15 +137,15 @@ if __name__ == "__main__":
         print("Please close the application")
         # The code stops running
         sys.exit()
-    # Test to see if user is on island
 
-    if on_land(polygon, pt1):
-        print("User is on land")
-    else:
-        # The user is advised to quit the application
-        print("Please close the application")
-        # The code stops running
-        sys.exit()
+    # Test to see if user is on island
+    #if on_tile(pt1, polygon):
+    #    print("User is on land")
+    #else:
+    #    # The user is advised to quit the application
+    #    print("Please close the application")
+    #    # The code stops running
+    #    sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection(tile)
