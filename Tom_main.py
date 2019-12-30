@@ -82,6 +82,8 @@ if __name__ == "__main__":
     # Import the background map
     background = rasterio.open('background/raster-50k_2724246.tif')
 
+    # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
+
     # Ask the user for their location
     print("Please input your location")
     north, east = int(input("east: ")), int(input("north: "))
@@ -100,8 +102,8 @@ if __name__ == "__main__":
     plot_buffer = location.buffer(10000)
 
     # Get the bounds for the 10km limits
-    plot_buffer_bounds = plot_buffer.bounds
-    print(plot_buffer_bounds)
+    plot_buffer_bounds = tuple(plot_buffer.bounds)
+    print(plot_buffer_bounds[0])
 
     # todo: Problem - POLYGON does not supprot indexing - Need to resolve
 
@@ -305,8 +307,8 @@ if __name__ == "__main__":
     # todo: an automatically adjusting North arrow and scale bar
     plt.ylabel("Northings")
     plt.xlabel("Eastings")
-    plt.ylim((plot_buffer[1], plot_buffer[3]))
-    plt.xlim((plot_buffer[0], plot_buffer[2]))
+    plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
+    plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
     plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
     plt.scatter(east, north, color="black", marker="^")
     plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1], color="black", marker="*")
