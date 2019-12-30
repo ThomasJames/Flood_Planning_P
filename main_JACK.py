@@ -101,15 +101,12 @@ if __name__ == "__main__":
 
     # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
 
-    pt1 = Point(north, east)
-    x, y = pt1.xy
-    polygon = shape_file.geometry
-    #polygon.contains(pt1)
-    #shape_file.plot()
-    print(polygon)
+    # Extract the island shape as shapely file
+    island_shape = shape_file.geometry
+    print(island_shape)
 
-    #plt.plot(x, y, 'ro')
-    #polygon.contains(pt1)
+    # plt.plot(x, y, 'ro')
+    # polygon.contains(pt1)
 
     # Create a buffer zone of 5km
     location = Point(east, north)
@@ -139,13 +136,13 @@ if __name__ == "__main__":
         sys.exit()
 
     # Test to see if user is on island
-    #if on_tile(pt1, polygon):
-    #    print("User is on land")
-    #else:
-    #    # The user is advised to quit the application
-    #    print("Please close the application")
-    #    # The code stops running
-    #    sys.exit()
+    if on_tile(location, island_shape):
+        print("User is on land")
+    else:
+        # The user is advised to quit the application
+        print("Please close the application")
+        # The code stops running
+        sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection(tile)

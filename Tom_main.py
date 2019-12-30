@@ -82,6 +82,9 @@ if __name__ == "__main__":
     # Import the background map
     background = rasterio.open('background/raster-50k_2724246.tif')
 
+    # Import the isle_of_wight shape
+    island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
+
     # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
 
     # Ask the user for their location
@@ -206,7 +209,6 @@ if __name__ == "__main__":
     # (90000, 450619) # Out of range
     # (92000, 460619) # In range but wrong
 
-
     """""  
     IDENTIFY THE NETWORK
     --------------------
@@ -305,6 +307,7 @@ if __name__ == "__main__":
     # Plotting
     # todo: a 10km limit around the user
     # todo: an automatically adjusting North arrow and scale bar
+    # todo: Find out how to plot elevation side bar
 
     # y label
     plt.ylabel("Northings")
@@ -314,8 +317,15 @@ if __name__ == "__main__":
     plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
     # 10km easting limit
     plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
+    # North Arrow (x, y) to (x+dx, y+dy).
+    plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
+    plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N")
+    # Scale bar (set to 5km)
+    plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
+    plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km")
     # User location
     plt.scatter(east, north, color="black", marker="^")
+    # Plot the first node
     plt.scatter(first_node[0], first_node[1], color="black", marker="*")
     # Nearest node to user
     plt.scatter(highest_east, highest_north, color="red", marker="^")
