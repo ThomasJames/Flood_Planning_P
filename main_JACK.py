@@ -30,9 +30,9 @@ from numpy import asarray
 from numpy import savetxt
 
 # Function to test if the user is on the polygon
-def on_land(north, east):
+def on_land(pol, poi):
     try:
-        if polygon.contains(pt1):
+        if pol.contains(poi):
             return True
         else:
             return False
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     x, y = pt1.xy
     polygon = shape_file.geometry
     plt.plot(x, y, 'ro')
-    polygon.contains(pt1)
+    #polygon.contains(pt1)
 
     # Create a buffer zone of 5km
     location = Point(east, north)
@@ -128,6 +128,15 @@ if __name__ == "__main__":
     # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
         print("Point is on tile")
+    else:
+        # The user is advised to quit the application
+        print("Please close the application")
+        # The code stops running
+        sys.exit()
+    # Test to see if user is on island
+
+    if on_land(polygon, pt1):
+        print("User is on land")
     else:
         # The user is advised to quit the application
         print("Please close the application")
