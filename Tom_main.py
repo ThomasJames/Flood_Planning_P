@@ -305,19 +305,30 @@ if __name__ == "__main__":
     # Plotting
     # todo: a 10km limit around the user
     # todo: an automatically adjusting North arrow and scale bar
+
+    # y label
     plt.ylabel("Northings")
+    # x label
     plt.xlabel("Eastings")
+    # 10km northings limit
     plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
+    # 10km easting limit
     plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
+    # bounding box
     plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    # User location
     plt.scatter(east, north, color="black", marker="^")
     plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1], color="black", marker="*")
+    # Nearest node to user
     plt.scatter(highest_east, highest_north, color="red", marker="^")
+    # highest point
     plt.scatter(nearest_node_to_finish[0], nearest_node_to_finish[1], color="red", marker="*")
+    # Plotting of the buffer zone
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
-
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
+    # Plotting of the elevation
     rasterio.plot.show(elevation, background, alpha=0.5)
+    # Create the plot
     plt.show()
 
     """""
