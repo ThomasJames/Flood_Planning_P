@@ -253,11 +253,11 @@ if __name__ == "__main__":
 
     # Find the nearest value to the start
     for i in idx.nearest(query_start, 1):
-        nearest_node_to_start = road_nodes_list[i]
+        first_node = road_nodes_list[i]
 
     # Find the nearest value to the finish
     for i in idx.nearest(query_finish, 1):
-        nearest_node_to_finish = road_nodes_list[i]
+        last_node = road_nodes_list[i]
 
     """""  
     FIND THE SHORTEST ROUTE
@@ -314,15 +314,13 @@ if __name__ == "__main__":
     plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
     # 10km easting limit
     plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
-    # bounding box
-    plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
     # User location
     plt.scatter(east, north, color="black", marker="^")
-    plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1], color="black", marker="*")
+    plt.scatter(first_node[0], first_node[1], color="black", marker="*")
     # Nearest node to user
     plt.scatter(highest_east, highest_north, color="red", marker="^")
     # highest point
-    plt.scatter(nearest_node_to_finish[0], nearest_node_to_finish[1], color="red", marker="*")
+    plt.scatter(last_node[0], last_node[1], color="red", marker="*")
     # Plotting of the buffer zone
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
@@ -330,6 +328,7 @@ if __name__ == "__main__":
     rasterio.plot.show(elevation, background, alpha=0.5)
     # Create the plot
     plt.show()
+
 
     """""
     EXTENDING THE REGION
@@ -347,6 +346,8 @@ if __name__ == "__main__":
     ADDITONAL IDEAS 
     ---------------
     """""
+
+    # Let the user know they are in the water, and plot it as a danger zone
     # Simple GUI to ask the user if they are walking / running / cycling
     # Return an answer if the user was on a bike or running
     # Return a value for the estimated number of steps the user will take
