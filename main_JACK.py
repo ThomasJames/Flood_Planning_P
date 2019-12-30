@@ -104,7 +104,7 @@ if __name__ == "__main__":
     pt1 = Point(north, east)
     x, y = pt1.xy
     polygon = shape_file.geometry
-    plt.plot(x, y, 'ro')
+    #plt.plot(x, y, 'ro')
     #polygon.contains(pt1)
 
     # Create a buffer zone of 5km
