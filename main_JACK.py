@@ -1,5 +1,5 @@
-# commit test 
 import numpy as np
+import sys
 import pandas as pd
 from pyproj import CRS
 from pyproj import Transformer
@@ -29,6 +29,15 @@ from shapely.wkt import loads
 from numpy import asarray
 from numpy import savetxt
 
+# Function to test if the user is on the polygon
+def on_land(north, east):
+    try:
+        if polygon.contains(pt1):
+            return True
+        else:
+            return False
+    except IOError:
+        print("Unable to perform this operation")
 
 # Function to test if any object is within a polygon
 def on_tile(c, b):
@@ -76,16 +85,27 @@ if __name__ == "__main__":
     you can select a random point within 5km of the user.
     """""
 
-    # Import elevation data
+    # Import elevation map
     elevation = rasterio.open('elevation/SZ.asc')
 
     # Import the background map
     background = rasterio.open('background/raster-50k_2724246.tif')
 
+    # Import island shapefile
+    shape_file = gpd.read_file('shape/isle_of_wight.shp')
+
     # Ask the user for their location
-    print("Please input your location:")
-    north, east = float(input("east: ")), float(input("north: "))
+    print("Please input your location")
+    north, east = int(input("east: ")), int(input("north: "))
     print(north, east)
+
+    # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
+
+    pt1 = Point(north, east)
+    x, y = pt1.xy
+    polygon = shape_file.geometry
+    plt.plot(x, y, 'ro')
+    polygon.contains(pt1)
 
     # Create a buffer zone of 5km
     location = Point(east, north)
@@ -93,12 +113,26 @@ if __name__ == "__main__":
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
-    # Is the coordinate in the bounding box
+    # Create a 5km buffer
     buffer_zone = location.buffer(5000)
+
+    # Create a 10km buffer for plotting purposes
+    plot_buffer = location.buffer(10000)
+
+    # Get the bounds for the 10km limits
+    plot_buffer_bounds = tuple(plot_buffer.bounds)
+    print(plot_buffer_bounds[0])
+
+    # todo: Problem - POLYGON does not supprot indexing - Need to resolve
+
+    # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
         print("Point is on tile")
     else:
+        # The user is advised to quit the application
         print("Please close the application")
+        # The code stops running
+        sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection(tile)
@@ -125,7 +159,7 @@ if __name__ == "__main__":
         # Read the window to a np subset array
         elevation_window = raster.read(1, window=window_pixel)
 
-        # Extract the x and y coordinates of the exterior
+        # Extract the x and y pixel coordinates of the exterior
         intersection_pixel_x, intersection_pixel_y = raster.index(*intersection_shape.exterior.xy)
 
         # Generate the (x, y) coordinate format
@@ -144,27 +178,35 @@ if __name__ == "__main__":
     #  Create a numpy array of the buffer zone todo: does this actually mask the outter bounds?
     masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
 
-    # Rescale the elevation data
+    # Rescale the elevation data todo: is there a function to extract the coordinates without rescale
+    # todo: maybe we could use pyproj/projection transformations?
     rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
+    highest_east_index, highest_north_index = (np.where(masked_elevation_data == np.amax(masked_elevation_data)))
+    print(highest_east_index)
+    print(highest_north_index)
 
-    # Extract the coordinates of the highest points
-    y, x = (np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
+    # Extract the coordinates of the highest points #
+    highest_east_index, highest_north_index = (
+        np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
+    print(highest_north_index)
+    print(highest_east_index)
 
     # Choose the first value
-    x = (x[0])
-    y = (y[0])
+    highest_east_index = (highest_east_index[0])
+    highest_north_index = (highest_north_index[0])
 
     # Adjust the coordinates into the coordinate system
-    easting = x + window[0]
-    northing = y + window[1]
+    highest_east = highest_east_index + window[0]
+    highest_north = highest_north_index + window[1]
 
     # Create a shapely point for the highest point
-    highest_point_coord = Point(easting, northing)
+    highest_point_coord = Point(highest_east, highest_north)
 
     # Calculate the distance that the user will have to travel
     linear_distance_to_travel = highest_point_coord.distance(location) / 1000
 
     # Important variables:
+    #print("The user is on the island: ", on_land(north, east))
     print("The distance to travel in kilometers is: ", linear_distance_to_travel)
     print("Highest point in masked elevation data", np.amax(masked_elevation_data))
     print("elevation window shape is ", elevation_window.shape)
@@ -172,7 +214,6 @@ if __name__ == "__main__":
     print("Highest point on the window is", np.amax(elevation_window))
     print("Highest point in the buffer zone", np.amax(masked_elevation_data))
     print("The window bounds are: ", window)
-    print("the dataset crs is: ", elevation.crs[0])
 
     # Some test coordinates
     # (85800, 439619) # Looks ok
@@ -183,28 +224,6 @@ if __name__ == "__main__":
     # (85500, 450619) # Looks good
     # (90000, 450619) # Out of range
     # (92000, 460619) # In range but wrong
-
-    """""  
-    PLOTTING
-    --------
-    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey 
-    raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
-    starting point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the 
-    shortest route calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation
-     range, a north arrow, a scale bar, and a legend.
-    """""
-
-    # Plotting
-    # todo: a 10km limit around the user
-    # todo: an automatically adjusting North arrow and scale bar
-    plt.ylabel("Northings")
-    plt.xlabel("Eastings")
-    plt.scatter(east, north, color="blue")
-    plt.scatter(easting, northing, color="red")  # High point
-    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.5)
-    # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
-    rasterio.plot.show(elevation, background, alpha=0.5)
-    plt.show()
 
     """""  
     IDENTIFY THE NETWORK
@@ -219,27 +238,46 @@ if __name__ == "__main__":
 
     Worked example 
     https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
-    """
+    """""
 
     # Load the ITN network
     solent_itn_json = "itn/solent_itn.json"
     with open(solent_itn_json, "r") as f:
         solent_itn_json = json.load(f)
 
-    # Walk down the tree (quad tree or R-Tree, etc) until you find the lowest node that contains the “search point”.
-    # Then look at the parent of that node, and check all points that is contained within the parent
-    # (including sub notes) If you have not found enough points, then move on to the parent’s parent etc.
+    # Create a list formed of all the 'roadnodes' coordinates
+    road_nodes = road_links = solent_itn_json['roadnodes']
+    road_nodes_list = []
+    for nodes in road_nodes:
+        road_nodes_list.append(road_nodes[nodes]["coords"])
+
+    # Check the coordinates
+    print(road_nodes_list)
 
     # construct an index with the default construction
     idx = index.Index()
 
-    # Create a bounding box
-    left, bottom, right, top = (0.0, 0.0, 1.0, 1.0)
+    # Insert the points into the index
+    for i, p in enumerate(road_nodes_list):
+        idx.insert(i, p + p, p)
 
-    # Insert an entry into the index:
-    idx.insert(0, (left, bottom, right, top))
+    # The query start point is the user location:
+    query_start = (east, north)
+    print(query_start)
 
-    """
+    # The query finish point is the highest point
+    query_finish = (highest_east, highest_north)
+    print(query_finish)
+
+    # Find the nearest value to the start
+    for i in idx.nearest(query_start, 1):
+        nearest_node_to_start = road_nodes_list[i]
+
+    # Find the nearest value to the finish
+    for i in idx.nearest(query_finish, 1):
+        nearest_node_to_finish = road_nodes_list[i]
+
+    """""  
     FIND THE SHORTEST ROUTE
     -----------------------
 
@@ -251,14 +289,75 @@ if __name__ == "__main__":
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
 
+    # Find the shortest path
+    # todo: How do you access weights based gradient?
+    # path = nx.dijkstra_path(g, source=start, target=end, weight="weight")
+    # print(path)
+
+    # The first step is to iterate through each of the nodes on the shortest path calculated. Ignore the first node, but
+    # instead assign it to a variable called first_node. Starting with the second node, we find the fid of road link
+    # that connects the first_node and node. Knowing the roadlink fid, we can find the coordinates and make a shapely
+    # LineString object. The final step of each iteration is to set first_node so that it can be used in the next
+    # iteration. On each iteration we append the feature id and the geometry to two lists links and geom which are used
+    # to build the path_gpd GeoDataFrame.
+
+    """""  
+    PLOTTING
+    --------
+    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey 
+    raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
+    starting point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the 
+    shortest route calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation
+    range, a north arrow, a scale bar, and a legend.
+    To create a GeoDataFrame of the shortest path and then display it on top of a raster.
+    We shall be using the following packages and the background map. 
+    import rasterio
+    import pyproj
+    import numpy as np
+    import geopandas as gpd
+    import matplotlib.pyplot as plt
+    import cartopy.crs as ccrs
+    from shapely.geometry import LineString  
+    """""
+
+    # Plotting
+    # todo: a 10km limit around the user
+    # todo: an automatically adjusting North arrow and scale bar
+
+    # y label
+    plt.ylabel("Northings")
+    # x label
+    plt.xlabel("Eastings")
+    # 10km northings limit
+    plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
+    # 10km easting limit
+    plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
+    # bounding box
+    plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    # User location
+    plt.scatter(east, north, color="black", marker="^")
+    plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1], color="black", marker="*")
+    # Nearest node to user
+    plt.scatter(highest_east, highest_north, color="red", marker="^")
+    # highest point
+    plt.scatter(nearest_node_to_finish[0], nearest_node_to_finish[1], color="red", marker="*")
+    # Plotting of the buffer zone
+    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
+    # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
+    # Plotting of the elevation
+    rasterio.plot.show(elevation, background, alpha=0.5)
+    # Create the plot
+    plt.show()
+
     """""
     EXTENDING THE REGION
     --------------------
     The position of the user is restricted to a region in where the user must be more than 5km from the edge of the 
     elevation raster. Write additional code to overcome this limitation.   
     """""
+
     # Potential Solutions:
-    # Create a function that generates a bounding box that adjusted to the limits of the existing raster.
+    # Create a function that generates a bounding box that adjusts to the limits of the existing raster.
     # If the user is outside the region, tell them.
     # Create a directory of raster files that correspond to the users coordinates, apply the relevant tile.
 
