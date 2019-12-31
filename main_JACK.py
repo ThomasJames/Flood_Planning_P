@@ -8,7 +8,9 @@ from rtree.index import Index
 from shapely import geometry
 from shapely.geometry import Point
 from shapely.geometry import LineString
+from shapely.geometry import multipolygon
 from shapely.geometry import Polygon
+from shapely.geometry import shape
 import matplotlib.pyplot as plt
 from pyproj import Geod
 import geopandas as gpd
@@ -103,10 +105,6 @@ if __name__ == "__main__":
 
     # Extract the island shape as shapely file
     island_shape = shape_file.geometry
-    print(island_shape)
-
-    # plt.plot(x, y, 'ro')
-    # polygon.contains(pt1)
 
     # Create a buffer zone of 5km
     location = Point(east, north)
@@ -126,7 +124,9 @@ if __name__ == "__main__":
 
     # todo: Problem - POLYGON does not support indexing - Need to resolve
 
-    # Test is coordinate buffer zone is within bounding box
+    print(island_shape.contains(location))
+
+     #Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
         print("Point is on tile")
     else:
@@ -135,15 +135,25 @@ if __name__ == "__main__":
         # The code stops running
         sys.exit()
 
-    # Test to see if user is on island
-    if on_tile(location, island_shape):
-        print("User is on land")
-    else:
-        # The user is advised to quit the application
-        print("Please close the application")
-        # The code stops running
-        sys.exit()
+    #if on_tile(location, island_shape):
+    #    print("user is on island")
+    #else:
+    #    # The user is advised to quit the application
+    #    print("Please close the application")
+    #    # The code stops running
+    #    sys.exit()
 
+
+
+    ## Test to see if user is on island
+    #if on_tile(location, island_shape):
+    #    print("User is on land")
+    #else:
+    #    # The user is advised to quit the application
+    #    print("Please close the application")
+    #    # The code stops running
+    #    sys.exit()
+    #
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection(tile)
 
