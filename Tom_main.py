@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from pyproj import Geod
 import geopandas as gpd
 import rasterio
-from rasterio import plot
+from rasterio import plot, warp
 import rtree
 from rtree import index
 import networkx as nx
@@ -25,6 +25,8 @@ import numpy as np
 import geopandas as gpd
 import json
 from rasterio.mask import mask
+from rasterio import mask
+
 from shapely.wkt import loads
 from numpy import asarray
 from numpy import savetxt
@@ -33,7 +35,7 @@ from numpy import savetxt
 # Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
-        if b.contains(c):
+        if b.contains( c ):
             return True
         else:
             return False
@@ -115,99 +117,62 @@ if __name__ == "__main__":
         print("Point is on tile")
     else:
         # The user is advised to quit the application
-        print("Please close the application")
+        print( "Please close the application" )
         # The code stops running
         sys.exit()
 
     # Create an intersect polygon with the tile
-    intersection_shape = buffer_zone.intersection(tile)
+    intersection_shape = buffer_zone.intersection( tile )
 
     # Get the buffer zone/ intersection coordinates
     x_bi, y_bi = intersection_shape.exterior.xy
 
-    # Assign the bounding box of the intersect shape to window
-    window = intersection_shape.bounds
-    print("window dimensions are: ", window)
+    # Create coordinate list to allow for iteration
+    highest_east, highest_north = buffer_zone.exterior.xy
+    x_list = []
+    y_list = []
+    for i in highest_east:
+        x_list.append( i )
+    print( x_list )
+    for i in highest_north:
+        y_list.append( i )
+    print( y_list )
+    buffer_coordinates = generate_coordinates( x_list, y_list )
 
-    # Create a numpy array subset of the elevation data
-    with rasterio.open('elevation/SZ.asc') as raster:
+    # Warp the coordinates
+    roi_polygon_src_coords = warp.transform_geom( {'init': 'EPSG:27700'},
+                                                  elevation.crs,
+                                                  {"type": "Polygon",
+                                                   "coordinates": [buffer_coordinates]} )
 
-        # Upper Left pixel coordinate
-        ul = raster.index(*window[0:2])
+    # create an 3d array containing the elevation data masked to the buffer zone
+    elevation_mask, out_transform = mask.mask( elevation,
+                                               [roi_polygon_src_coords],
+                                               crop=False )
 
-        # Lower right pixel coordinate
-        lr = raster.index(*window[2:4])
+    # Search for the highest point in the buffer zone
+    highest_point = np.amax( elevation_mask )
+    print( highest_point )
 
-        # Create the usable window dimensions
-        window_pixel = ((lr[0], ul[0]), (ul[1], lr[1]))
+    # Extract the indicies of the highest point in pixel coordinates
+    z, highest_east, highest_north = np.where( highest_point == elevation_mask )
 
-        # Read the window to a np subset array
-        elevation_window = raster.read(1, window=window_pixel)
+    # Isolate the first value from the list
+    highest_east = highest_east[0]
+    highest_north = highest_north[0]
 
-        # Extract the x and y pixel coordinates of the exterior
-        intersection_pixel_x, intersection_pixel_y = raster.index(*intersection_shape.exterior.xy)
-
-        # Generate the (x, y) coordinate format
-        intersection_pixel_coords = generate_coordinates(intersection_pixel_x, intersection_pixel_y)
-
-        # Generate a 'shapley' polygon
-        intersection_pixel_polygon = Polygon(intersection_pixel_coords)
-
-        # Rasterize the geometry
-        mask = rasterio.features.rasterize(
-            [(intersection_pixel_polygon, 0)],  # Masking shape
-            out_shape=elevation_window.shape,
-            all_touched=False
-        )
-
-    #  Create a numpy array of the buffer zone todo: does this actually mask the outter bounds?
-    masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
-
-    # Rescale the elevation data todo: is there a function to extract the coordinates without rescale
-    # todo: maybe we could use pyproj/projection transformations?
-    rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
-    highest_east_index, highest_north_index = (np.where(masked_elevation_data == np.amax(masked_elevation_data)))
-    print(highest_east_index)
-    print(highest_north_index)
-
-    # Extract the coordinates of the highest points #
-    highest_east_index, highest_north_index = (
-        np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
-    print(highest_north_index)
-    print(highest_east_index)
-
-    # Choose the first value
-    highest_east_index = (highest_east_index[0])
-    highest_north_index = (highest_north_index[0])
-
-    # Adjust the coordinates into the coordinate system
-    highest_east = highest_east_index + window[0]
-    highest_north = highest_north_index + window[1]
-
-    # Create a shapely point for the highest point
-    highest_point_coord = Point(highest_east, highest_north)
-
-    # Calculate the distance that the user will have to travel
-    linear_distance_to_travel = highest_point_coord.distance(location) / 1000
-
-    # Important variables:
-    print("The distance to travel in kilometers is: ", linear_distance_to_travel)
-    print("Highest point in masked elevation data", np.amax(masked_elevation_data))
-    print("elevation window shape is ", elevation_window.shape)
-    print("The elevation window shape is: ", elevation_window.shape)
-    print("Highest point on the window is", np.amax(elevation_window))
-    print("Highest point in the buffer zone", np.amax(masked_elevation_data))
-    print("The window bounds are: ", window)
+    # Transform the pixel coordinates back to east/north
+    highest_east, highest_north = rasterio.transform.xy( out_transform, highest_east, highest_north, offset='center' )
 
     # Some test coordinates
-    # (85800, 439619) # Looks ok
-    # (90000, 450000) # Out of range
-    # (90000, 430000) # Out of range
-    # (85500, 440619) # Looks ok
-    # (85500, 460619) # Out of range
-    # (85500, 450619) # Looks good
-    # (90000, 450619) # Out of range
-    # (92000, 460619) # In range but wrong
+    # (85800, 439619)
+    # (90000, 450000)
+    # (90000, 430000)
+    # (85500, 440619)
+    # (85500, 460619)
+    # (85500, 450619)
+    # (90000, 450619)
+    # (92000, 460619)
 
     """""  
     IDENTIFY THE NETWORK
@@ -304,17 +269,24 @@ if __name__ == "__main__":
     from shapely.geometry import LineString  
     """""
 
-    # Plotting
-    # todo: a 10km limit around the user
-    # todo: an automatically adjusting North arrow and scale bar
-    # todo: Find out how to plot elevation side bar
+    # Todo: Plotting check points:
+    # Suitable marker for the user location
+    # Suitable marker for the highest point
+    # todo: Background map
+    #  Elevation overlay
+    # a 10km limit around the user
+    # an automatically adjusting North arrow and scale bar
+    # todo: Elevation side bar
+    # todo: Elevation side bar
+    # todo: A legend - Start / Highest / Shortest path
 
     # y label
-    plt.ylabel("Northings")
+
+    plt.ylabel( "Northings" )
     # x label
-    plt.xlabel("Eastings")
+    plt.xlabel( "Eastings" )
     # 10km northings limit
-    plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
+    plt.ylim( (plot_buffer_bounds[1], plot_buffer_bounds[3]) )
     # 10km easting limit
     plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
     # North Arrow (x, y) to (x+dx, y+dy).
@@ -333,6 +305,7 @@ if __name__ == "__main__":
     plt.scatter(last_node[0], last_node[1], color="red", marker="*")
     # Plotting of the buffer zone
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
+
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
     rasterio.plot.show(elevation, background, alpha=0.5)
