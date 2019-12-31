@@ -160,6 +160,9 @@ if __name__ == "__main__":
     # Get the buffer zone/ intersection coordinates
     x_bi, y_bi = intersection_shape.exterior.xy
 
+    # change colour of buffer zone when overlapping polygon
+    
+
     # Assign the bounding box of the intersect shape to window
     window = intersection_shape.bounds
     print("window dimensions are: ", window)
