@@ -125,13 +125,13 @@ if __name__ == "__main__":
 
     # Create coordinate list to allow for iteration
     highest_east, highest_north = buffer_zone.exterior.xy
-    eastings_list = []
-    northings_list = []
+    easting_list = []
+    northing_list = []
     for i in highest_east:
-        eastings_list.append( i )
+        easting_list.append( i )
     for i in highest_north:
-        northings_list.append( i )
-    buffer_coordinates = generate_coordinates( eastings_list, northings_list )
+        northing_list.append( i )
+    buffer_coordinates = generate_coordinates( easting_list, northing_list )
 
     # Warp the coordinates
     roi_polygon_src_coords = warp.transform_geom( {'init': 'EPSG:27700'},
@@ -202,9 +202,6 @@ if __name__ == "__main__":
     for nodes in road_nodes:
         road_nodes_list.append( road_nodes[nodes]["coords"] )
 
-    # Check the coordinates
-    print( road_nodes_list )
-
     # construct an index with the default construction
     idx = index.Index()
 
@@ -214,11 +211,9 @@ if __name__ == "__main__":
 
     # The query start point is the user location:
     query_start = (east, north)
-    print( query_start )
 
     # The query finish point is the highest point
     query_finish = (highest_east, highest_north)
-    print( query_finish )
 
     # Find the nearest value to the start
     for i in idx.nearest( query_start, 1 ):
@@ -281,7 +276,7 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
-
+    plt.title( "Isle of Wight Flood Plan" )
     # y label
     plt.ylabel( "Northings" )
     # x label
