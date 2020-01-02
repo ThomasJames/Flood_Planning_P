@@ -40,15 +40,15 @@ def on_tile(c, b):
         else:
             return False
     except IOError:
-        print("Unable to perform this operation")
+        print( "Unable to perform this operation" )
 
 
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
 def generate_coordinates(p_x, p_y):
     try:
-        return list(map(lambda x, y: (x, y), p_x, p_y))
+        return list( map( lambda x, y: (x, y), p_x, p_y ) )
     except IOError:
-        print("Unable to perform this operation")
+        print( "Unable to perform this operation" )
 
 
 """""
@@ -79,45 +79,41 @@ if __name__ == "__main__":
     """""
 
     # Import elevation map
-    elevation = rasterio.open('elevation/SZ.asc')
+    elevation = rasterio.open( 'elevation/SZ.asc' )
 
     # Import the background map
-    background = rasterio.open('background/raster-50k_2724246.tif')
+    background = rasterio.open( 'background/raster-50k_2724246.tif' )
 
     # Import the isle_of_wight shape
-    island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
+    island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
 
     # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
 
     # Ask the user for their location
-    print("Please input your location")
-    north, east = int(input("east: ")), int(input("north: "))
-    print(north, east)
+    print( "Please input your location" )
+    north, east = int( input( "east: " ) ), int( input( "north: " ) )
 
     # Create a buffer zone of 5km
-    location = Point(east, north)
+    location = Point( east, north )
 
     # create a to spec bounding box "tile"
-    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    tile = Polygon( [(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)] )
 
     # Create a 5km buffer
-    buffer_zone = location.buffer(5000)
+    buffer_zone = location.buffer( 5000 )
 
     # Create a 10km buffer for plotting purposes
-    plot_buffer = location.buffer(10000)
+    plot_buffer = location.buffer( 10000 )
 
     # Get the bounds for the 10km limits
-    plot_buffer_bounds = tuple(plot_buffer.bounds)
-    print(plot_buffer_bounds[0])
-
-    # todo: Problem - POLYGON does not supprot indexing - Need to resolve
+    plot_buffer_bounds = tuple( plot_buffer.bounds )
 
     # Test is coordinate buffer zone is within bounding box
-    if on_tile(buffer_zone, tile):
-        print("Point is on tile")
+    if on_tile( buffer_zone, tile ):
+        print( " " )
     else:
         # The user is advised to quit the application
-        print( "Please close the application" )
+        print( "You location is not in range, please close the application" )
         # The code stops running
         sys.exit()
 
@@ -129,15 +125,13 @@ if __name__ == "__main__":
 
     # Create coordinate list to allow for iteration
     highest_east, highest_north = buffer_zone.exterior.xy
-    x_list = []
-    y_list = []
+    easting_list = []
+    northing_list = []
     for i in highest_east:
-        x_list.append( i )
-    print( x_list )
+        easting_list.append( i )
     for i in highest_north:
-        y_list.append( i )
-    print( y_list )
-    buffer_coordinates = generate_coordinates( x_list, y_list )
+        northing_list.append( i )
+    buffer_coordinates = generate_coordinates( easting_list, northing_list )
 
     # Warp the coordinates
     roi_polygon_src_coords = warp.transform_geom( {'init': 'EPSG:27700'},
@@ -152,7 +146,6 @@ if __name__ == "__main__":
 
     # Search for the highest point in the buffer zone
     highest_point = np.amax( elevation_mask )
-    print( highest_point )
 
     # Extract the indicies of the highest point in pixel coordinates
     z, highest_east, highest_north = np.where( highest_point == elevation_mask )
@@ -164,15 +157,24 @@ if __name__ == "__main__":
     # Transform the pixel coordinates back to east/north
     highest_east, highest_north = rasterio.transform.xy( out_transform, highest_east, highest_north, offset='center' )
 
+    # Create a 'shapley' point for the highest point
+    highest_point_coordinates = Point( highest_east, highest_north )
+
     # Some test coordinates
-    # (85800, 439619)
+    # (85810, 439619)
+    # (85110, 450619
+    # (85110, 455619)
     # (90000, 450000)
     # (90000, 430000)
-    # (85500, 440619)
-    # (85500, 460619)
+    # (84651, 440619)
+    # (85500, 439619)
     # (85500, 450619)
     # (90000, 450619)
     # (92000, 460619)
+
+    print( "The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
+           "This location has a linear distance of ", (location.distance( highest_point_coordinates ) / 1000),
+           "in meters" )
 
     """""  
     IDENTIFY THE NETWORK
@@ -191,39 +193,34 @@ if __name__ == "__main__":
 
     # Load the ITN network
     solent_itn_json = "itn/solent_itn.json"
-    with open(solent_itn_json, "r") as f:
-        solent_itn_json = json.load(f)
+    with open( solent_itn_json, "r" ) as f:
+        solent_itn_json = json.load( f )
 
     # Create a list formed of all the 'roadnodes' coordinates
     road_nodes = road_links = solent_itn_json['roadnodes']
     road_nodes_list = []
     for nodes in road_nodes:
-        road_nodes_list.append(road_nodes[nodes]["coords"])
-
-    # Check the coordinates
-    print(road_nodes_list)
+        road_nodes_list.append( road_nodes[nodes]["coords"] )
 
     # construct an index with the default construction
     idx = index.Index()
 
     # Insert the points into the index
-    for i, p in enumerate(road_nodes_list):
-        idx.insert(i, p + p, p)
+    for i, p in enumerate( road_nodes_list ):
+        idx.insert( i, p + p, p )
 
     # The query start point is the user location:
     query_start = (east, north)
-    print(query_start)
 
     # The query finish point is the highest point
     query_finish = (highest_east, highest_north)
-    print(query_finish)
 
     # Find the nearest value to the start
-    for i in idx.nearest(query_start, 1):
+    for i in idx.nearest( query_start, 1 ):
         first_node = road_nodes_list[i]
 
     # Find the nearest value to the finish
-    for i in idx.nearest(query_finish, 1):
+    for i in idx.nearest( query_finish, 1 ):
         last_node = road_nodes_list[i]
 
     """""  
@@ -279,39 +276,38 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
-
+    plt.title( "Isle of Wight Flood Plan" )
     # y label
-
     plt.ylabel( "Northings" )
     # x label
     plt.xlabel( "Eastings" )
     # 10km northings limit
     plt.ylim( (plot_buffer_bounds[1], plot_buffer_bounds[3]) )
     # 10km easting limit
-    plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
+    plt.xlim( (plot_buffer_bounds[0], plot_buffer_bounds[2]) )
     # North Arrow (x, y) to (x+dx, y+dy).
-    plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
-    plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N")
+    plt.arrow( plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200 )
+    plt.text( plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N" )
     # Scale bar (set to 5km)
-    plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
-    plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km")
+    plt.arrow( plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0 )
+    plt.text( plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km" )
     # User location
-    plt.scatter(east, north, color="black", marker="^")
+    plt.scatter( east, north, color="black", marker=11 )
     # Plot the first node
-    plt.scatter(first_node[0], first_node[1], color="black", marker="*")
+    plt.scatter( first_node[0], first_node[1], color="black", marker="x" )
     # Nearest node to user
-    plt.scatter(highest_east, highest_north, color="red", marker="^")
+    plt.scatter( highest_east, highest_north, color="red", marker=11 )
     # highest point
-    plt.scatter(last_node[0], last_node[1], color="red", marker="*")
+    plt.scatter( last_node[0], last_node[1], color="red", marker="x" )
     # Plotting of the buffer zone
-    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
+    plt.fill( x_bi, y_bi, color="skyblue", alpha=0.4 )
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show(elevation, background, alpha=0.5)
+    rasterio.plot.show( elevation, alpha=0.5 )
+
     # Create the plot
     plt.show()
-
 
     """""
     EXTENDING THE REGION
