@@ -31,17 +31,7 @@ from shapely.wkt import loads
 from numpy import asarray
 from numpy import savetxt
 
-# Function to test if the user is on the polygon
-#def on_land(pol, poi):
-#    try:
-#        if pol.contains(poi):
-#            return True
-#        else:
-#            return False
-#    except IOError:
-#        print("Unable to perform this operation")
-#
-# Function to test if any object is within a polygon
+
 def on_tile(c, b):
     try:
         if b.contains(c):
@@ -103,7 +93,7 @@ if __name__ == "__main__":
 
     # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
 
-    # Extract the island shape as shapely file
+    # Extract the island shape as shapely file (SHP to polygon rather than multipolygon ideally)
     island_shape = shape_file.geometry
 
     # Create a buffer zone of 5km
@@ -124,9 +114,9 @@ if __name__ == "__main__":
 
     # todo: Problem - POLYGON does not support indexing - Need to resolve
 
+    # Is user on island (works but needs formatting as function)
     print(island_shape.contains(location))
 
-     #Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
         print("Point is on tile")
     else:
@@ -143,17 +133,6 @@ if __name__ == "__main__":
     #    # The code stops running
     #    sys.exit()
 
-
-
-    ## Test to see if user is on island
-    #if on_tile(location, island_shape):
-    #    print("User is on land")
-    #else:
-    #    # The user is advised to quit the application
-    #    print("Please close the application")
-    #    # The code stops running
-    #    sys.exit()
-    #
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection(tile)
 
