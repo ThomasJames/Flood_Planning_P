@@ -309,7 +309,7 @@ if __name__ == "__main__":
 
     # Create the plot
     plt.show()
-    
+
     """""
     EXTENDING THE REGION
     --------------------

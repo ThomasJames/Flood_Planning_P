@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
 
-    # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
+    # todo: Import a polygon of the isle of wight, let the user know if they are in the water. Done by jack
 
     # Ask the user for their location
     print( "Please input your location" )
@@ -236,6 +236,9 @@ if __name__ == "__main__":
     (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
+    # Test start node
+    test_start = "osgb4000000026219225"
+    test_finish = "osgb4000000026141678"
 
     # Create an empty network
     g = nx.Graph()
@@ -246,6 +249,8 @@ if __name__ == "__main__":
         g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'] )
 
     # Identify the start and finish nodes
+    path = nx.dijkstra_path( g, source=test_start, target=test_finish )
+    print( path )
 
     """""  
     PLOTTING
@@ -266,7 +271,7 @@ if __name__ == "__main__":
     from shapely.geometry import LineString  
     """""
 
-    """""
+
     # Todo: Plotting check points:
     # Suitable marker for the user location
     # Suitable marker for the highest point
@@ -309,7 +314,7 @@ if __name__ == "__main__":
 
     # Create the plot
     plt.show()
-    """""
+
 
     """""
     EXTENDING THE REGION
@@ -328,7 +333,8 @@ if __name__ == "__main__":
     ---------------
     """""
 
-    # Let the user know they are in the water, and plot it as a danger zone
+    # Let the user know they are in the water, and plot it as a danger zone DONE!
     # Simple GUI to ask the user if they are walking / running / cycling
     # Return an answer if the user was on a bike or running
     # Return a value for the estimated number of steps the user will take
+    # Returns some informatin about the weather conditions
