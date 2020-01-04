@@ -259,8 +259,8 @@ if __name__ == "__main__":
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
     # Test start node
-    test_start = "osgb4000000026219225"
-    test_finish = "osgb4000000026210271"
+    test_start = "osgb4000000026142375"
+    test_finish = "osgb5000005190446083"
 
     # Create an empty network
     g = nx.Graph()
