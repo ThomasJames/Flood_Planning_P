@@ -111,9 +111,13 @@ if __name__ == "__main__":
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple(plot_buffer.bounds)
 
-    # todo: write as function
     # Is user on island (works but needs formatting as function)
-    print(island_shape.contains(location))
+    user_on_land = (island_shape.contains(location))
+    if user_on_land[0] == True:
+        print("User is on land")
+    else:
+        print("Please swim to shore and start again")
+        sys.exit()
 
     # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
