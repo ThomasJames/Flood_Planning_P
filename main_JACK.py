@@ -176,8 +176,12 @@ if __name__ == "__main__":
             out_shape=elevation_window.shape,
             all_touched=False
         )
+    # todo: JACK use rasterio.merge fucntion to change two input layers to one
+    # todo: GUI - Look up some GUI/tkinter examples online, try to recreate one that will take user input and assign to
+    # todo: continued - the values north and east - rather than terminal input. Also see the weather information file
+    # todo: continued - Check to see if its possible to retrieve weather information for the local area
+    # todo: Get the user on land feature working on the main.py file
 
-    #  Create a numpy array of the buffer zone todo: does this actually mask the outter bounds?
     masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
 
     # Rescale the elevation data todo: is there a function to extract the coordinates without rescale
