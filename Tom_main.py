@@ -50,7 +50,6 @@ def generate_coordinates(p_x, p_y):
     except IOError:
         print( "Unable to perform this operation" )
 
-
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
 advising everyone to proceed by foot to the nearest high ground.
@@ -223,6 +222,9 @@ if __name__ == "__main__":
     for i in idx.nearest( query_finish, 1 ):
         last_node = road_nodes_list[i]
 
+    print( "The start node is at: ", first_node )
+    print( "The finish node is at: ", last_node )
+
     """""  
     FIND THE SHORTEST ROUTE
     -----------------------
@@ -235,17 +237,15 @@ if __name__ == "__main__":
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     """""
 
-    # Find the shortest path
-    # todo: How do you access weights based gradient?
-    # path = nx.dijkstra_path(g, source=start, target=end, weight="weight")
-    # print(path)
+    # Create an empty network
+    g = nx.Graph()
 
-    # The first step is to iterate through each of the nodes on the shortest path calculated. Ignore the first node, but
-    # instead assign it to a variable called first_node. Starting with the second node, we find the fid of road link
-    # that connects the first_node and node. Knowing the roadlink fid, we can find the coordinates and make a shapely
-    # LineString object. The final step of each iteration is to set first_node so that it can be used in the next
-    # iteration. On each iteration we append the feature id and the geometry to two lists links and geom which are used
-    # to build the path_gpd GeoDataFrame.
+    # Populate a network containing all the roadlinks
+    road_links = solent_itn_json['roadlinks']
+    for link in road_links:
+        g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'] )
+
+    # Identify the start and finish nodes
 
     """""  
     PLOTTING
@@ -266,6 +266,7 @@ if __name__ == "__main__":
     from shapely.geometry import LineString  
     """""
 
+    """""
     # Todo: Plotting check points:
     # Suitable marker for the user location
     # Suitable marker for the highest point
@@ -308,6 +309,7 @@ if __name__ == "__main__":
 
     # Create the plot
     plt.show()
+    """""
 
     """""
     EXTENDING THE REGION
