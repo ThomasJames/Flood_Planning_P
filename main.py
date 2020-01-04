@@ -79,41 +79,48 @@ if __name__ == "__main__":
     """""
 
     # Import elevation map
-    elevation = rasterio.open( 'elevation/SZ.asc' )
+    elevation = rasterio.open('elevation/SZ.asc')
 
     # Import the background map
-    background = rasterio.open( 'background/raster-50k_2724246.tif' )
+    background = rasterio.open('background/raster-50k_2724246.tif')
 
-    # Import the isle_of_wight shape
-    island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
+    # Import island shapefile
+    shape_file = gpd.read_file('shape/isle_of_wight.shp')
 
     # todo: Import a polygon of the isle of wight, let the user know if they are in the water. Done by jack
 
     # Ask the user for their location
-    print( "Please input your location" )
-    north, east = int( input( "east: " ) ), int( input( "north: " ) )
+    print("Please input your location")
+    north, east = int(input("east: ")), int(input("north: "))
+
+    # Extract the island shape as shapely file (SHP to polygon rather than multipolygon ideally)
+    island_shape = shape_file.geometry
 
     # Create a buffer zone of 5km
-    location = Point( east, north )
+    location = Point(east, north)
 
     # create a to spec bounding box "tile"
-    tile = Polygon( [(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)] )
+    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
     # Create a 5km buffer
-    buffer_zone = location.buffer( 5000 )
+    buffer_zone = location.buffer(5000)
 
     # Create a 10km buffer for plotting purposes
-    plot_buffer = location.buffer( 10000 )
+    plot_buffer = location.buffer(10000)
 
     # Get the bounds for the 10km limits
-    plot_buffer_bounds = tuple( plot_buffer.bounds )
+    plot_buffer_bounds = tuple(plot_buffer.bounds)
+
+    # todo: write as function
+    # Is user on island (works but needs formatting as function)
+    print(island_shape.contains(location))
 
     # Test is coordinate buffer zone is within bounding box
-    if on_tile( buffer_zone, tile ):
-        print( " " )
+    if on_tile(buffer_zone, tile):
+        print(" ")
     else:
         # The user is advised to quit the application
-        print( "You location is not in range, please close the application" )
+        print("You location is not in range, please close the application")
         # The code stops running
         sys.exit()
 
