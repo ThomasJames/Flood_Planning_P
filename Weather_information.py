@@ -15,7 +15,7 @@ def weather():
     res = requests.get( url )
     output = res.json()
 
-    weahther_status = output['weather'][0]["description"]
+    weather_status = output['weather'][0]["description"]
     temperature = output['main']['temp']
     humidity = output["main"]["humidity"]
     wind_speed = output["wind"]["speed"]
@@ -23,7 +23,7 @@ def weather():
     temperature_label.configure( text="weather status: ", str( temperature ) )
     humidity_label.configure( text="weather status: ", str( humidity ) )
     wind_speed_label.configure( text="weather status: ", str( wind_speed ) )
-    weather_status_label.configure( text="weather status: ", str( weahther_status ) )
+    weather_status_label.configure( text="weather status: ", str( weather_status ) )
 
 
 window = Tk()
