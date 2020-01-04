@@ -50,6 +50,28 @@ def generate_coordinates(p_x, p_y):
     except IOError:
         print( "Unable to perform this operation" )
 
+
+# Function to generate color path
+def color_path(g, path, color="blue"):
+    res = g.copy()
+    first = path[0]
+    for node in path[1:]:
+        res.edges[first, node]["color"] = color
+        first = node
+    return res
+
+
+# Funcrtion to obtain colours
+def obtain_colors(graph, default_node="blue", default_edge="black"):
+    node_colors = []
+    for node in graph.nodes:
+        node_colors.append( graph.nodes[node].get( 'color', default_node ) )
+    edge_colors = []
+    for u, v in graph.edges:
+        edge_colors.append( graph.edges[u, v].get( 'color', default_edge ) )
+    return node_colors, edge_colors
+
+
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
 advising everyone to proceed by foot to the nearest high ground.
@@ -238,7 +260,7 @@ if __name__ == "__main__":
     """""
     # Test start node
     test_start = "osgb4000000026219225"
-    test_finish = "osgb4000000026141678"
+    test_finish = "osgb4000000026210271"
 
     # Create an empty network
     g = nx.Graph()
@@ -248,9 +270,19 @@ if __name__ == "__main__":
     for link in road_links:
         g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'] )
 
-    # Identify the start and finish nodes
+    # Identify the shortest path
     path = nx.dijkstra_path( g, source=test_start, target=test_finish )
     print( path )
+
+    # assign the path the colour red
+    g_1 = color_path( g, path, "red" )
+
+    # Retrieve the nod coloutsd
+    node_colors, edge_colors = obtain_colors( g_1 )
+
+    # Draw the shortest path network
+    nx.draw( g_1, node_size=1, edge_color=edge_colors, node_color=node_colors )
+    plt.show()
 
     """""  
     PLOTTING
@@ -271,7 +303,7 @@ if __name__ == "__main__":
     from shapely.geometry import LineString  
     """""
 
-
+    """""  
     # Todo: Plotting check points:
     # Suitable marker for the user location
     # Suitable marker for the highest point
@@ -310,11 +342,11 @@ if __name__ == "__main__":
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show( elevation, alpha=0.5 )
+    rasterio.plot.show( elevation, alpha=0.5,  contour=False)
 
     # Create the plot
     plt.show()
-
+    """""
 
     """""
     EXTENDING THE REGION
@@ -333,7 +365,7 @@ if __name__ == "__main__":
     ---------------
     """""
 
-    # Let the user know they are in the water, and plot it as a danger zone DONE!
+    # Let the user know they are in the water, and plot it as a danger zone
     # Simple GUI to ask the user if they are walking / running / cycling
     # Return an answer if the user was on a bike or running
     # Return a value for the estimated number of steps the user will take
