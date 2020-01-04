@@ -323,6 +323,7 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
+    shortest_path_gpd.plot( color="black", linestyle="--" )
     plt.title( "Isle of Wight Flood Plan" )
     # y label
     plt.ylabel( "Northings" )
