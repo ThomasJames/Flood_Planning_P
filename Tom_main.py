@@ -61,7 +61,7 @@ def color_path(g, path, color="blue"):
     return res
 
 
-# Funcrtion to obtain colours
+# Function to obtain colours
 def obtain_colors(graph, default_node="blue", default_edge="black"):
     node_colors = []
     for node in graph.nodes:
@@ -280,9 +280,19 @@ if __name__ == "__main__":
     # Retrieve the nod coloutsd
     node_colors, edge_colors = obtain_colors( g_1 )
 
-    # Draw the shortest path network
-    nx.draw( g_1, node_size=1, edge_color=edge_colors, node_color=node_colors )
-    plt.show()
+    links = []  # this list will be used to populate the feature id (fid) column
+    geom = []  # this list will be used to populate the geometry column
+
+    first_node = path[0]
+    for node in path[1:]:
+        link_fid = g.edges[first_node, node]['fid']
+        links.append( link_fid )
+        geom.append( LineString( road_links[link_fid]['coords'] ) )
+        first_node = node
+
+    shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
+
+    shortest_path_gpd.plot()
 
     """""  
     PLOTTING
@@ -303,7 +313,6 @@ if __name__ == "__main__":
     from shapely.geometry import LineString  
     """""
 
-    """""  
     # Todo: Plotting check points:
     # Suitable marker for the user location
     # Suitable marker for the highest point
@@ -346,7 +355,6 @@ if __name__ == "__main__":
 
     # Create the plot
     plt.show()
-    """""
 
     """""
     EXTENDING THE REGION
