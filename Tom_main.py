@@ -176,14 +176,15 @@ if __name__ == "__main__":
     highest_point_coordinates = Point( highest_east, highest_north )
 
     # Some test coordinates
-    # (85810, 439619) Works
-    # (85110, 450619  Last node not defined
-    # (85810, 457190) Works
-    # (90000, 450000) Last node not defined
-    # (90000, 430000) Out of range
-    # (85500, 439619) Works
-    # (85500, 450619) Last node not defined
-    # (85970, 458898) Works
+    # (85810, 439619)
+    # (85110, 450619
+    # (85810, 457190)
+    # (90000, 450000)
+    # (90000, 430000)
+    # (85500, 439619)
+    # (85500, 450619)
+    # (85970, 458898)
+    # (90000, 450619)
 
     print( "The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
            "This location has a linear distance of ", (location.distance( highest_point_coordinates ) / 1000),
@@ -225,14 +226,14 @@ if __name__ == "__main__":
 
     # Find the nearest value to the start
     for i in idx.nearest( query_start, 1 ):
-        first_node = road_nodes_list[i]
+        start_node = road_nodes_list[i]
 
     # Find the nearest value to the finish
     for i in idx.nearest( query_finish, 1 ):
-        last_node = road_nodes_list[i]
+        finish_node = road_nodes_list[i]
 
-    print( "The start node is at: ", first_node )
-    print( "The finish node is at: ", last_node )
+    print( "The start node is at: ", start_node )
+    print( "The finish node is at: ", finish_node )
 
     # Index the dictionary to get the start of the road link.
     # Create a list of road link ids
@@ -247,14 +248,14 @@ if __name__ == "__main__":
 
     for i in road_id_list:
         for j in range( len( road_links[i]["coords"] ) ):
-            if road_links[i]["coords"][j] == first_node:
+            if road_links[i]["coords"][j] == start_node:
                 print( i )
                 first_node_id = str( road_links[i]["end"] )
     print( "First node id is: ", first_node_id )
 
     for i in road_id_list:
         for j in range( len( road_links[i]["coords"] ) ):
-            if road_links[i]["coords"][j] == last_node:
+            if road_links[i]["coords"][j] == finish_node:
                 print( i )
                 last_node_id = str( road_links[i]["end"] )
     print( "last node id is: ", last_node_id )
@@ -342,7 +343,7 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
-    shortest_path_gpd.plot( color="black", linestyle="--" )
+    shortest_path_gpd.plot( color="salmon", )
     plt.title( "Isle of Wight Flood Plan" )
     # y label
     plt.ylabel( "Northings" )
@@ -361,11 +362,11 @@ if __name__ == "__main__":
     # User location
     plt.scatter( east, north, color="black", marker=11 )
     # Plot the first node
-    plt.scatter( first_node[0], first_node[1], color="black", marker="x" )
+    plt.scatter( start_node[0], start_node[1], color="black", marker="x" )
     # Nearest node to user
     plt.scatter( highest_east, highest_north, color="black", marker=11 )
     # highest point
-    plt.scatter( last_node[0], last_node[1], color="black", marker="x" )
+    plt.scatter( finish_node[0], finish_node[1], color="black", marker="x" )
     # Plotting of the buffer zone
     plt.fill( x_bi, y_bi, color="skyblue", alpha=0.4 )
 
