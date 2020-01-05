@@ -175,16 +175,13 @@ if __name__ == "__main__":
     highest_point_coordinates = Point( highest_east, highest_north )
 
     # Some test coordinates
-    # (85810, 439619)
-    # (85110, 450619
-    # (85110, 455619)
-    # (90000, 450000)
-    # (90000, 430000)
-    # (84651, 440619)
+    # (85810, 439619) Works
+    # (85110, 450619  Last node not defined
+    # (85810, 457190) Works
+    # (90000, 450000) Last node not defined
+    # (90000, 430000) Out of range
     # (85500, 439619)
     # (85500, 450619)
-    # (90000, 450619)
-    # (92000, 460619)
 
     print( "The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
            "This location has a linear distance of ", (location.distance( highest_point_coordinates ) / 1000),
@@ -259,7 +256,6 @@ if __name__ == "__main__":
     print( last_node_id )
 
     """""  
-    
     FIND THE SHORTEST ROUTE
     -----------------------
 
