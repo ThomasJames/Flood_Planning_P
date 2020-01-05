@@ -26,16 +26,48 @@ import geopandas as gpd
 import json
 from rasterio.mask import mask
 from rasterio import mask
+from tkinter import *
 
 from shapely.wkt import loads
 from numpy import asarray
 from numpy import savetxt
 
 
+# class InputForm():
+#    def __init__(self, prompt):
+#        self.prompt = prompt
+#        self.response = ""
+#
+#        def ok():
+#            self.response = entry1.get(), entry2.get()
+#            master.destroy()
+#
+#        master = Tk()
+#        lbl = Label(master, text=self.prompt)
+#        lbl.pack()
+#        entry1 = Entry(master)
+#        entry2 = Entry(master)
+#        entry1.pack()
+#        entry2.pack()
+#
+#        entry1.focus_set()
+#
+#        butt = Button(master, text="OK", width=10, command=ok)
+#        butt.pack()
+#
+#        mainloop()
+#
+# input_points = InputForm("Enter something").response
+#
+# print("Your coordinates are:", input_points)
+# east = int(input_points[0])
+# north = int(input_points[1])
+
+
 # Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
-        if b.contains( c ):
+        if b.contains(c):
             return True
         else:
             return False
@@ -91,7 +123,7 @@ if __name__ == "__main__":
 
     # Ask the user for their location
     print("Please input your location")
-    north, east = int(input("east: ")), int(input("north: "))
+    east, north = int(input("east: ")), int(input("north: "))
 
     # Extract the island shape as shapely file (SHP to polygon rather than multipolygon ideally)
     island_shape = shape_file.geometry
