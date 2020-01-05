@@ -27,11 +27,6 @@ import json
 from rasterio.mask import mask
 from rasterio import mask
 
-from shapely.wkt import loads
-from numpy import asarray
-from numpy import savetxt
-
-
 # Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
@@ -107,8 +102,6 @@ if __name__ == "__main__":
 
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
-
-    # todo: Import a polygon of the isle of wight, let the user know if they are in the water. Done by jack
 
     # Ask the user for their location
     print( "Please input your location" )
@@ -205,11 +198,6 @@ if __name__ == "__main__":
     Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
     to the highest point.
     
-    Creating an index tutorial
-    https://rtree.readthedocs.io/en/latest/tutorial.html#creating-an-index
-    
-    Worked example 
-    https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
     """""
 
     # Load the ITN network
@@ -218,7 +206,7 @@ if __name__ == "__main__":
         solent_itn_json = json.load( f )
 
     # Create a list formed of all the 'roadnodes' coordinates
-    road_nodes = road_links = solent_itn_json['roadnodes']
+    road_nodes = solent_itn_json['roadnodes']
     road_nodes_list = []
     for nodes in road_nodes:
         road_nodes_list.append( road_nodes[nodes]["coords"] )
@@ -247,6 +235,8 @@ if __name__ == "__main__":
     print( "The start node is at: ", first_node )
     print( "The finish node is at: ", last_node )
 
+    # Index the dictionary to get the start of the road link.
+
     """""  
     FIND THE SHORTEST ROUTE
     -----------------------
@@ -257,6 +247,19 @@ if __name__ == "__main__":
     you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
     (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
+    
+    Let’s make a simple 3x3 Manhattan road network:
+    g = nx.Graph()
+    w, h = 3, 3
+    We label our nodes in accordance with the formula defined by this function:
+    def get_id(r, c):
+        return r + c * w
+    We now add the nodes to the graph:
+    for r in range(h):
+        for c in range(w):
+            g.add_node(get_id(r, c))
+            print(get_id(r, c))
+    
     """""
     # Test start node
     test_start = "osgb4000000026142375"
@@ -272,13 +275,12 @@ if __name__ == "__main__":
 
     # Identify the shortest path
     path = nx.dijkstra_path( g, source=test_start, target=test_finish )
-    print( path )
 
     # assign the path the colour red
-    g_1 = color_path( g, path, "red" )
+    shortest_path = color_path( g, path, "red" )
 
     # Retrieve the nod coloutsd
-    node_colors, edge_colors = obtain_colors( g_1 )
+    node_colors, edge_colors = obtain_colors( shortest_path )
 
     links = []  # this list will be used to populate the feature id (fid) column
     geom = []  # this list will be used to populate the geometry column
