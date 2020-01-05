@@ -28,7 +28,6 @@ from rasterio.mask import mask
 from rasterio import mask
 from tkinter import *
 
-
 class InputForm():
     def __init__(self, prompt):
         self.prompt = prompt
@@ -52,6 +51,7 @@ class InputForm():
         butt.pack()
 
         mainloop()
+
 
 
 # Function to test if any object is within a polygon
@@ -122,10 +122,10 @@ if __name__ == "__main__":
     """""
 
     input_points = InputForm("Enter position").response
+
     print("Your coordinates are:", input_points)
     east = (int(input_points[0]))
     north = (int(input_points[1]))
-    # print(east, north)
 
     # Import elevation map
     elevation = rasterio.open('elevation/SZ.asc')
@@ -136,14 +136,16 @@ if __name__ == "__main__":
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
 
-    # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
-
-    # Ask the user for their location
-    # print("Please input your location")
-    # north, east = int(input("east: ")), int(input("north: "))
-
     # Create a buffer zone of 5km
-    location = Point(east, north)
+    location = Point(north, east)
+
+    # Is user on island
+    user_on_land = (island_shapefile.contains(location))
+    if user_on_land[0] == True:
+        print("User is on land")
+    else:
+        print("Please swim to shore and start again")
+        sys.exit()
 
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
@@ -157,14 +159,6 @@ if __name__ == "__main__":
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple(plot_buffer.bounds)
 
-    user_on_land = (island_shapefile.contains(location))
-    # print(user_on_land)
-    if user_on_land[0] == True:
-        print("User is on land")
-    else:
-        print("Please swim to shore and start again")
-        sys.exit()
-
     # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
         print(" ")
@@ -172,13 +166,10 @@ if __name__ == "__main__":
         # The user is advised to quit the application
         print("You location is not in range, please close the application")
         # The code stops running
-        sys.exit()
+        # sys.exit()
 
-    # todo: JACK use rasterio.merge fucntion to change two input layers to one
-    # todo: GUI - Look up some GUI/tkinter examples online, try to recreate one that will take user input and assign to
-    # todo: continued - the values north and east - rather than terminal input. Also see the weather information file    # Create an intersect polygon with the tile
-    # todo: continued - Check to see if its possible to retrieve weather information for the local area    intersection_shape = buffer_zone.intersection(tile)
-    # todo: Get the user on land feature working on the main.py file
+    # Create an intersect polygon with the tile
+    intersection_shape = buffer_zone.intersection(tile)
 
     # Get the buffer zone/ intersection coordinates
     x_bi, y_bi = intersection_shape.exterior.xy
@@ -221,14 +212,17 @@ if __name__ == "__main__":
     highest_point_coordinates = Point(highest_east, highest_north)
 
     # Some test coordinates
-    # (85810, 439619) Works
-    # (85110, 450619  Last node not defined
-    # (85810, 457190) Works
-    # (90000, 450000) Last node not defined
-    # (90000, 430000) Out of range
-    # (85500, 439619) Works
-    # (85500, 450619) Last node not defined
-    # (85970, 458898) Works
+    # end to end
+    # (85810, 439619) - Disjointed.
+    # (85110, 450619  - Disjointed.
+    # (85810, 457190) - good
+    # (90000, 450000) - Disjointed
+    # (90000, 430000) - Good
+    # (85500, 439619) - Disjointed at start
+    # (85500, 450619) - Very disjointed at end
+    # (85970, 458898) - Good
+    # (90000, 450619) - Good
+    # (85110, 458898) - Disjointed.
 
     print("The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
           "This location has a linear distance of ", (location.distance(highest_point_coordinates) / 1000),
@@ -270,38 +264,43 @@ if __name__ == "__main__":
 
     # Find the nearest value to the start
     for i in idx.nearest(query_start, 1):
-        first_node = road_nodes_list[i]
+        start_node = road_nodes_list[i]
 
     # Find the nearest value to the finish
     for i in idx.nearest(query_finish, 1):
-        last_node = road_nodes_list[i]
+        finish_node = road_nodes_list[i]
 
-    print("The start node is at: ", first_node)
-    print("The finish node is at: ", last_node)
+    # Display the node coordinates
+    print("The start node is at: ", start_node)
+    print("The finish node is at: ", finish_node)
 
-    # Index the dictionary to get the start of the road link.
-    # Create a list of road link ids
-    # Use this to iterate across all the coordinates
-
+    # Extract the 'roadlinks' data
     road_links = solent_itn_json['roadlinks']
 
+    # Place all road Id's into a list
     road_id_list = []
     for road_id in road_links:
         road_id_list.append(road_id)
-    print(road_id_list)
 
+    # Extract the first node
     for i in road_id_list:
         for j in range(len(road_links[i]["coords"])):
-            if road_links[i]["coords"][j] == first_node:
-                print(i)
+            if road_links[i]["coords"][j] == start_node:
                 first_node_id = str(road_links[i]["end"])
+
+    # Show the first node id
     print("First node id is: ", first_node_id)
 
+    # Extract the finish node
     for i in road_id_list:
         for j in range(len(road_links[i]["coords"])):
-            if road_links[i]["coords"][j] == last_node:
-                print(i)
+            if road_links[i]["coords"][j] == finish_node:
                 last_node_id = str(road_links[i]["end"])
+
+    test_first_node = 'osgb4000000026146800'
+    test_last_node = 'osgb4000000026145458'
+
+    # Show the last node id
     print("last node id is: ", last_node_id)
 
     """""  
@@ -349,6 +348,7 @@ if __name__ == "__main__":
     links = []  # this list will be used to populate the feature id (fid) column
     geom = []  # this list will be used to populate the geometry column
 
+    # Populate the shortest path
     first_node = path[0]
     for node in path[1:]:
         link_fid = g.edges[first_node, node]['fid']
@@ -356,6 +356,7 @@ if __name__ == "__main__":
         geom.append(LineString(road_links[link_fid]['coords']))
         first_node = node
 
+    # Create Geopandas shortest path for plotting
     shortest_path_gpd = gpd.GeoDataFrame({"fid": links, "geometry": geom})
 
     """""  
@@ -387,8 +388,7 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
-    # todo work out how to overlay the rasterio plots
-    shortest_path_gpd.plot(color="black", linestyle="--")
+    shortest_path_gpd.plot(color="salmon", )
     plt.title("Isle of Wight Flood Plan")
     # y label
     plt.ylabel("Northings")
@@ -407,17 +407,22 @@ if __name__ == "__main__":
     # User location
     plt.scatter(east, north, color="black", marker=11)
     # Plot the first node
-    plt.scatter(first_node[0], first_node[1], color="black", marker="x")
+    plt.scatter(start_node[0], start_node[1], color="black", marker="x")
     # Nearest node to user
-    plt.scatter(highest_east, highest_north, color="black", marker=11)
+    plt.scatter(highest_east, highest_north, color="white", marker=11)
     # highest point
-    plt.scatter(last_node[0], last_node[1], color="black", marker="x")
+    plt.scatter(finish_node[0], finish_node[1], color="white", marker="x")
+
+    # PLot the line between the user location and the and first node
+
+    # PLot the line between the highest point and the last node
+
     # Plotting of the buffer zone
-    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
+    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.2)
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show(elevation, alpha=0.5, contour=False)
+    rasterio.plot.show(elevation, alpha=1, contour=False)
 
     # Create the plot
     plt.show()
