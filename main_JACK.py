@@ -30,6 +30,39 @@ from rasterio.mask import mask
 from shapely.wkt import loads
 from numpy import asarray
 from numpy import savetxt
+from tkinter import *
+
+
+class InputForm():
+    def __init__(self, prompt):
+        self.prompt = prompt
+        self.response = ""
+
+        def ok():
+            self.response = entry1.get(), entry2.get()
+            master.destroy()
+
+        master = Tk()
+        lbl = Label(master, text=self.prompt)
+        lbl.pack()
+        entry1 = Entry(master)
+        entry2 = Entry(master)
+        entry1.pack()
+        entry2.pack()
+
+        entry1.focus_set()
+
+        butt = Button(master, text="OK", width=10, command=ok)
+        butt.pack()
+
+        mainloop()
+
+
+input_points = InputForm("Enter something").response
+
+print("returned value is:", input_points)
+east = int(input_points[0])
+north = int(input_points[1])
 
 
 def on_tile(c, b):
@@ -59,6 +92,9 @@ of the quickest route that they should take to walk to the highest point of land
 
 if __name__ == "__main__":
 
+    # Create a buffer zone of 5km
+    location = Point(east, north)
+
     """""  
     USER INPUT 
     ----------
@@ -87,17 +123,14 @@ if __name__ == "__main__":
     shape_file = gpd.read_file('shape/isle_of_wight.shp')
 
     # Ask the user for their location
-    print("Please input your location")
-    north, east = int(input("east: ")), int(input("north: "))
-    print(north, east)
+    # print("Please input your location")
+    # north, east = int(input("east: ")), int(input("north: "))
+    # print(north, east)
 
     # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
 
     # Extract the island shape as shapely file (SHP to polygon rather than multipolygon ideally)
     island_shape = shape_file.geometry
-
-    # Create a buffer zone of 5km
-    location = Point(east, north)
 
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
