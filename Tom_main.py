@@ -236,8 +236,30 @@ if __name__ == "__main__":
     print( "The finish node is at: ", last_node )
 
     # Index the dictionary to get the start of the road link.
+    # Create a list of road link ids
+    # Use this to iterate across all the coordinates
+
+    road_links = solent_itn_json['roadlinks']
+
+    road_id_list = []
+    for road_id in road_links:
+        road_id_list.append( road_id )
+    print( road_id_list )
+
+    for i in road_id_list:
+        if road_links[i]["coords"][0] == first_node:
+            print( i )
+            first_node_id = str( road_links[i]["start"] )
+    print( first_node_id )
+
+    for i in road_id_list:
+        if road_links[i]["coords"][-1] == last_node:
+            print( i )
+            last_node_id = str( road_links[i]["end"] )
+    print( last_node_id )
 
     """""  
+    
     FIND THE SHORTEST ROUTE
     -----------------------
 
@@ -261,9 +283,6 @@ if __name__ == "__main__":
             print(get_id(r, c))
     
     """""
-    # Test start node
-    test_start = "osgb4000000026142375"
-    test_finish = "osgb5000005190446083"
 
     # Create an empty network
     g = nx.Graph()
@@ -274,7 +293,7 @@ if __name__ == "__main__":
         g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'] )
 
     # Identify the shortest path
-    path = nx.dijkstra_path( g, source=test_start, target=test_finish )
+    path = nx.dijkstra_path( g, source=first_node_id, target=last_node_id )
 
     # assign the path the colour red
     shortest_path = color_path( g, path, "red" )
@@ -293,8 +312,6 @@ if __name__ == "__main__":
         first_node = node
 
     shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
-
-    shortest_path_gpd.plot()
 
     """""  
     PLOTTING
