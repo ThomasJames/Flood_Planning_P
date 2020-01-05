@@ -8,14 +8,12 @@ from rtree.index import Index
 from shapely import geometry
 from shapely.geometry import Point
 from shapely.geometry import LineString
-from shapely.geometry import multipolygon
 from shapely.geometry import Polygon
-from shapely.geometry import shape
 import matplotlib.pyplot as plt
 from pyproj import Geod
 import geopandas as gpd
 import rasterio
-from rasterio import plot
+from rasterio import plot, warp
 import rtree
 from rtree import index
 import networkx as nx
@@ -27,9 +25,7 @@ import numpy as np
 import geopandas as gpd
 import json
 from rasterio.mask import mask
-from shapely.wkt import loads
-from numpy import asarray
-from numpy import savetxt
+from rasterio import mask
 from tkinter import *
 
 
@@ -58,13 +54,7 @@ class InputForm():
         mainloop()
 
 
-input_points = InputForm("Enter something").response
-
-print("returned value is:", input_points)
-east = int(input_points[0])
-north = int(input_points[1])
-
-
+# Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
         if b.contains(c):
@@ -83,6 +73,27 @@ def generate_coordinates(p_x, p_y):
         print("Unable to perform this operation")
 
 
+# Function to generate color path
+def color_path(g, path, color="blue"):
+    res = g.copy()
+    first = path[0]
+    for node in path[1:]:
+        res.edges[first, node]["color"] = color
+        first = node
+    return res
+
+
+# Function to obtain colours
+def obtain_colors(graph, default_node="blue", default_edge="black"):
+    node_colors = []
+    for node in graph.nodes:
+        node_colors.append(graph.nodes[node].get('color', default_node))
+    edge_colors = []
+    for u, v in graph.edges:
+        edge_colors.append(graph.edges[u, v].get('color', default_edge))
+    return node_colors, edge_colors
+
+
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
 advising everyone to proceed by foot to the nearest high ground.
@@ -91,9 +102,6 @@ of the quickest route that they should take to walk to the highest point of land
 """""
 
 if __name__ == "__main__":
-
-    # Create a buffer zone of 5km
-    location = Point(east, north)
 
     """""  
     USER INPUT 
@@ -113,24 +121,29 @@ if __name__ == "__main__":
     you can select a random point within 5km of the user.
     """""
 
+    input_points = InputForm("Enter position").response
+    print("Your coordinates are:", input_points)
+    east = (int(input_points[0]))
+    north = (int(input_points[1]))
+    # print(east, north)
+
     # Import elevation map
     elevation = rasterio.open('elevation/SZ.asc')
 
     # Import the background map
     background = rasterio.open('background/raster-50k_2724246.tif')
 
-    # Import island shapefile
-    shape_file = gpd.read_file('shape/isle_of_wight.shp')
+    # Import the isle_of_wight shape
+    island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
+
+    # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
 
     # Ask the user for their location
     # print("Please input your location")
     # north, east = int(input("east: ")), int(input("north: "))
-    # print(north, east)
 
-    # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
-
-    # Extract the island shape as shapely file (SHP to polygon rather than multipolygon ideally)
-    island_shape = shape_file.geometry
+    # Create a buffer zone of 5km
+    location = Point(east, north)
 
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
@@ -143,126 +156,83 @@ if __name__ == "__main__":
 
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple(plot_buffer.bounds)
-    print(plot_buffer_bounds[0])
 
-    # todo: Problem - POLYGON does not support indexing - Need to resolve
+    user_on_land = (island_shapefile.contains(location))
+    # print(user_on_land)
+    if user_on_land[0] == True:
+        print("User is on land")
+    else:
+        print("Please swim to shore and start again")
+        sys.exit()
 
-    # Is user on island (works but needs formatting as function)
-    print(island_shape.contains(location))
-
+    # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
-        print("Point is on tile")
+        print(" ")
     else:
         # The user is advised to quit the application
-        print("Please close the application")
+        print("You location is not in range, please close the application")
         # The code stops running
         sys.exit()
 
-    #if on_tile(location, island_shape):
-    #    print("user is on island")
-    #else:
-    #    # The user is advised to quit the application
-    #    print("Please close the application")
-    #    # The code stops running
-    #    sys.exit()
-
-    # Create an intersect polygon with the tile
-    intersection_shape = buffer_zone.intersection(tile)
+    # todo: JACK use rasterio.merge fucntion to change two input layers to one
+    # todo: GUI - Look up some GUI/tkinter examples online, try to recreate one that will take user input and assign to
+    # todo: continued - the values north and east - rather than terminal input. Also see the weather information file    # Create an intersect polygon with the tile
+    # todo: continued - Check to see if its possible to retrieve weather information for the local area    intersection_shape = buffer_zone.intersection(tile)
+    # todo: Get the user on land feature working on the main.py file
 
     # Get the buffer zone/ intersection coordinates
     x_bi, y_bi = intersection_shape.exterior.xy
 
-    # change colour of buffer zone when overlapping polygon
-    
+    # Create coordinate list to allow for iteration
+    highest_east, highest_north = buffer_zone.exterior.xy
+    easting_list = []
+    northing_list = []
+    for i in highest_east:
+        easting_list.append(i)
+    for i in highest_north:
+        northing_list.append(i)
+    buffer_coordinates = generate_coordinates(easting_list, northing_list)
 
-    # Assign the bounding box of the intersect shape to window
-    window = intersection_shape.bounds
-    print("window dimensions are: ", window)
+    # Warp the coordinates
+    roi_polygon_src_coords = warp.transform_geom({'init': 'EPSG:27700'},
+                                                 elevation.crs,
+                                                 {"type": "Polygon",
+                                                  "coordinates": [buffer_coordinates]})
 
-    # Create a numpy array subset of the elevation data
-    with rasterio.open('elevation/SZ.asc') as raster:
+    # create an 3d array containing the elevation data masked to the buffer zone
+    elevation_mask, out_transform = mask.mask(elevation,
+                                              [roi_polygon_src_coords],
+                                              crop=False)
 
-        # Upper Left pixel coordinate
-        ul = raster.index(*window[0:2])
+    # Search for the highest point in the buffer zone
+    highest_point = np.amax(elevation_mask)
 
-        # Lower right pixel coordinate
-        lr = raster.index(*window[2:4])
+    # Extract the indicies of the highest point in pixel coordinates
+    z, highest_east, highest_north = np.where(highest_point == elevation_mask)
 
-        # Create the usable window dimensions
-        window_pixel = ((lr[0], ul[0]), (ul[1], lr[1]))
+    # Isolate the first value from the list
+    highest_east = highest_east[0]
+    highest_north = highest_north[0]
 
-        # Read the window to a np subset array
-        elevation_window = raster.read(1, window=window_pixel)
+    # Transform the pixel coordinates back to east/north
+    highest_east, highest_north = rasterio.transform.xy(out_transform, highest_east, highest_north, offset='center')
 
-        # Extract the x and y pixel coordinates of the exterior
-        intersection_pixel_x, intersection_pixel_y = raster.index(*intersection_shape.exterior.xy)
-
-        # Generate the (x, y) coordinate format
-        intersection_pixel_coords = generate_coordinates(intersection_pixel_x, intersection_pixel_y)
-
-        # Generate a 'shapley' polygon
-        intersection_pixel_polygon = Polygon(intersection_pixel_coords)
-
-        # Rasterize the geometry
-        mask = rasterio.features.rasterize(
-            [(intersection_pixel_polygon, 0)],  # Masking shape
-            out_shape=elevation_window.shape,
-            all_touched=False
-        )
-    # todo: JACK use rasterio.merge fucntion to change two input layers to one
-    # todo: GUI - Look up some GUI/tkinter examples online, try to recreate one that will take user input and assign to
-    # todo: continued - the values north and east - rather than terminal input. Also see the weather information file
-    # todo: continued - Check to see if its possible to retrieve weather information for the local area
-    # todo: Get the user on land feature working on the main.py file
-
-    masked_elevation_data = np.ma.array(data=elevation_window, mask=mask)
-
-    # Rescale the elevation data todo: is there a function to extract the coordinates without rescale
-    # todo: maybe we could use pyproj/projection transformations?
-    rescaled_masked_elevation_array = np.kron(masked_elevation_data, np.ones((5, 5)))
-    highest_east_index, highest_north_index = (np.where(masked_elevation_data == np.amax(masked_elevation_data)))
-    print(highest_east_index)
-    print(highest_north_index)
-
-    # Extract the coordinates of the highest points #
-    highest_east_index, highest_north_index = (
-        np.where(rescaled_masked_elevation_array == np.amax(rescaled_masked_elevation_array)))
-    print(highest_north_index)
-    print(highest_east_index)
-
-    # Choose the first value
-    highest_east_index = (highest_east_index[0])
-    highest_north_index = (highest_north_index[0])
-
-    # Adjust the coordinates into the coordinate system
-    highest_east = highest_east_index + window[0]
-    highest_north = highest_north_index + window[1]
-
-    # Create a shapely point for the highest point
-    highest_point_coord = Point(highest_east, highest_north)
-
-    # Calculate the distance that the user will have to travel
-    linear_distance_to_travel = highest_point_coord.distance(location) / 1000
-
-    # Important variables:
-    #print("The user is on the island: ", on_land(north, east))
-    print("The distance to travel in kilometers is: ", linear_distance_to_travel)
-    print("Highest point in masked elevation data", np.amax(masked_elevation_data))
-    print("elevation window shape is ", elevation_window.shape)
-    print("The elevation window shape is: ", elevation_window.shape)
-    print("Highest point on the window is", np.amax(elevation_window))
-    print("Highest point in the buffer zone", np.amax(masked_elevation_data))
-    print("The window bounds are: ", window)
+    # Create a 'shapley' point for the highest point
+    highest_point_coordinates = Point(highest_east, highest_north)
 
     # Some test coordinates
-    # (85800, 439619) # Looks ok
-    # (90000, 450000) # Out of range
-    # (90000, 430000) # Out of range
-    # (85500, 440619) # Looks ok
-    # (85500, 460619) # Out of range
-    # (85500, 450619) # Looks good
-    # (90000, 450619) # Out of range
-    # (92000, 460619) # In range but wrong
+    # (85810, 439619) Works
+    # (85110, 450619  Last node not defined
+    # (85810, 457190) Works
+    # (90000, 450000) Last node not defined
+    # (90000, 430000) Out of range
+    # (85500, 439619) Works
+    # (85500, 450619) Last node not defined
+    # (85970, 458898) Works
+
+    print("The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
+          "This location has a linear distance of ", (location.distance(highest_point_coordinates) / 1000),
+          "in meters")
 
     """""  
     IDENTIFY THE NETWORK
@@ -272,11 +242,6 @@ if __name__ == "__main__":
     Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
     to the highest point.
 
-    Creating an index tutorial
-    https://rtree.readthedocs.io/en/latest/tutorial.html#creating-an-index
-
-    Worked example 
-    https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
     """""
 
     # Load the ITN network
@@ -285,13 +250,10 @@ if __name__ == "__main__":
         solent_itn_json = json.load(f)
 
     # Create a list formed of all the 'roadnodes' coordinates
-    road_nodes = road_links = solent_itn_json['roadnodes']
+    road_nodes = solent_itn_json['roadnodes']
     road_nodes_list = []
     for nodes in road_nodes:
         road_nodes_list.append(road_nodes[nodes]["coords"])
-
-    # Check the coordinates
-    print(road_nodes_list)
 
     # construct an index with the default construction
     idx = index.Index()
@@ -302,19 +264,45 @@ if __name__ == "__main__":
 
     # The query start point is the user location:
     query_start = (east, north)
-    print(query_start)
 
     # The query finish point is the highest point
     query_finish = (highest_east, highest_north)
-    print(query_finish)
 
     # Find the nearest value to the start
     for i in idx.nearest(query_start, 1):
-        nearest_node_to_start = road_nodes_list[i]
+        first_node = road_nodes_list[i]
 
     # Find the nearest value to the finish
     for i in idx.nearest(query_finish, 1):
-        nearest_node_to_finish = road_nodes_list[i]
+        last_node = road_nodes_list[i]
+
+    print("The start node is at: ", first_node)
+    print("The finish node is at: ", last_node)
+
+    # Index the dictionary to get the start of the road link.
+    # Create a list of road link ids
+    # Use this to iterate across all the coordinates
+
+    road_links = solent_itn_json['roadlinks']
+
+    road_id_list = []
+    for road_id in road_links:
+        road_id_list.append(road_id)
+    print(road_id_list)
+
+    for i in road_id_list:
+        for j in range(len(road_links[i]["coords"])):
+            if road_links[i]["coords"][j] == first_node:
+                print(i)
+                first_node_id = str(road_links[i]["end"])
+    print("First node id is: ", first_node_id)
+
+    for i in road_id_list:
+        for j in range(len(road_links[i]["coords"])):
+            if road_links[i]["coords"][j] == last_node:
+                print(i)
+                last_node_id = str(road_links[i]["end"])
+    print("last node id is: ", last_node_id)
 
     """""  
     FIND THE SHORTEST ROUTE
@@ -326,19 +314,49 @@ if __name__ == "__main__":
     you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
     (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
+
+    Let’s make a simple 3x3 Manhattan road network:
+    g = nx.Graph()
+    w, h = 3, 3
+    We label our nodes in accordance with the formula defined by this function:
+    def get_id(r, c):
+        return r + c * w
+    We now add the nodes to the graph:
+    for r in range(h):
+        for c in range(w):
+            g.add_node(get_id(r, c))
+            print(get_id(r, c))
+
     """""
 
-    # Find the shortest path
-    # todo: How do you access weights based gradient?
-    # path = nx.dijkstra_path(g, source=start, target=end, weight="weight")
-    # print(path)
+    # Create an empty network
+    g = nx.Graph()
 
-    # The first step is to iterate through each of the nodes on the shortest path calculated. Ignore the first node, but
-    # instead assign it to a variable called first_node. Starting with the second node, we find the fid of road link
-    # that connects the first_node and node. Knowing the roadlink fid, we can find the coordinates and make a shapely
-    # LineString object. The final step of each iteration is to set first_node so that it can be used in the next
-    # iteration. On each iteration we append the feature id and the geometry to two lists links and geom which are used
-    # to build the path_gpd GeoDataFrame.
+    # Populate a network containing all the roadlinks
+    road_links = solent_itn_json['roadlinks']
+    for link in road_links:
+        g.add_edge(road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'])
+
+    # Identify the shortest path
+    path = nx.dijkstra_path(g, source=first_node_id, target=last_node_id)
+
+    # assign the path the colour red
+    shortest_path = color_path(g, path, "red")
+
+    # Retrieve the nod coloutsd
+    node_colors, edge_colors = obtain_colors(shortest_path)
+
+    links = []  # this list will be used to populate the feature id (fid) column
+    geom = []  # this list will be used to populate the geometry column
+
+    first_node = path[0]
+    for node in path[1:]:
+        link_fid = g.edges[first_node, node]['fid']
+        links.append(link_fid)
+        geom.append(LineString(road_links[link_fid]['coords']))
+        first_node = node
+
+    shortest_path_gpd = gpd.GeoDataFrame({"fid": links, "geometry": geom})
 
     """""  
     PLOTTING
@@ -359,10 +377,19 @@ if __name__ == "__main__":
     from shapely.geometry import LineString  
     """""
 
-    # Plotting
-    # todo: a 10km limit around the user
-    # todo: an automatically adjusting North arrow and scale bar
-
+    # Todo: Plotting check points:
+    # Suitable marker for the user location
+    # Suitable marker for the highest point
+    # todo: Background map
+    #  Elevation overlay
+    # a 10km limit around the user
+    # an automatically adjusting North arrow and scale bar
+    # todo: Elevation side bar
+    # todo: Elevation side bar
+    # todo: A legend - Start / Highest / Shortest path
+    # todo work out how to overlay the rasterio plots
+    shortest_path_gpd.plot(color="black", linestyle="--")
+    plt.title("Isle of Wight Flood Plan")
     # y label
     plt.ylabel("Northings")
     # x label
@@ -371,20 +398,27 @@ if __name__ == "__main__":
     plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
     # 10km easting limit
     plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
-    # bounding box
-    plt.plot([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    # North Arrow (x, y) to (x+dx, y+dy).
+    plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
+    plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N")
+    # Scale bar (set to 5km)
+    plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
+    plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km")
     # User location
-    plt.scatter(east, north, color="black", marker="^")
-    plt.scatter(nearest_node_to_start[0], nearest_node_to_start[1], color="black", marker="*")
+    plt.scatter(east, north, color="black", marker=11)
+    # Plot the first node
+    plt.scatter(first_node[0], first_node[1], color="black", marker="x")
     # Nearest node to user
-    plt.scatter(highest_east, highest_north, color="red", marker="^")
+    plt.scatter(highest_east, highest_north, color="black", marker=11)
     # highest point
-    plt.scatter(nearest_node_to_finish[0], nearest_node_to_finish[1], color="red", marker="*")
+    plt.scatter(last_node[0], last_node[1], color="black", marker="x")
     # Plotting of the buffer zone
     plt.fill(x_bi, y_bi, color="skyblue", alpha=0.4)
+
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show(elevation, background, alpha=0.5)
+    rasterio.plot.show(elevation, alpha=0.5, contour=False)
+
     # Create the plot
     plt.show()
 
@@ -404,6 +438,9 @@ if __name__ == "__main__":
     ADDITONAL IDEAS 
     ---------------
     """""
+
+    # Let the user know they are in the water, and plot it as a danger zone
     # Simple GUI to ask the user if they are walking / running / cycling
     # Return an answer if the user was on a bike or running
     # Return a value for the estimated number of steps the user will take
+    # Returns some informatin about the weather conditions
