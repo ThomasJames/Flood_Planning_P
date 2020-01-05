@@ -117,7 +117,7 @@ if __name__ == "__main__":
     background = rasterio.open('background/raster-50k_2724246.tif')
 
     # Import island shapefile
-    shape_file = gpd.read_file('shape/isle_of_wight.shp')
+    shape_file = gpd.read_file( '/Users/user/PycharmProjects/Flood_Planning_P/shape/isle_of_wight.shp' )
 
     # todo: Import a polygon of the isle of wight, let the user know if they are in the water. Done by jack
 
@@ -352,7 +352,7 @@ if __name__ == "__main__":
 
     # Create the plot
     plt.show()
-    
+
     """""
     EXTENDING THE REGION
     --------------------

@@ -27,11 +27,6 @@ import json
 from rasterio.mask import mask
 from rasterio import mask
 
-from shapely.wkt import loads
-from numpy import asarray
-from numpy import savetxt
-
-
 # Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
@@ -49,6 +44,28 @@ def generate_coordinates(p_x, p_y):
         return list( map( lambda x, y: (x, y), p_x, p_y ) )
     except IOError:
         print( "Unable to perform this operation" )
+
+
+# Function to generate color path
+def color_path(g, path, color="blue"):
+    res = g.copy()
+    first = path[0]
+    for node in path[1:]:
+        res.edges[first, node]["color"] = color
+        first = node
+    return res
+
+
+# Function to obtain colours
+def obtain_colors(graph, default_node="blue", default_edge="black"):
+    node_colors = []
+    for node in graph.nodes:
+        node_colors.append( graph.nodes[node].get( 'color', default_node ) )
+    edge_colors = []
+    for u, v in graph.edges:
+        edge_colors.append( graph.edges[u, v].get( 'color', default_edge ) )
+    return node_colors, edge_colors
+
 
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
@@ -85,8 +102,6 @@ if __name__ == "__main__":
 
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
-
-    # todo: Import a polygon of the isle of wight, let the user know if they are in the water.
 
     # Ask the user for their location
     print( "Please input your location" )
@@ -160,16 +175,13 @@ if __name__ == "__main__":
     highest_point_coordinates = Point( highest_east, highest_north )
 
     # Some test coordinates
-    # (85810, 439619)
-    # (85110, 450619
-    # (85110, 455619)
-    # (90000, 450000)
-    # (90000, 430000)
-    # (84651, 440619)
+    # (85810, 439619) Works
+    # (85110, 450619  Last node not defined
+    # (85810, 457190) Works
+    # (90000, 450000) Last node not defined
+    # (90000, 430000) Out of range
     # (85500, 439619)
     # (85500, 450619)
-    # (90000, 450619)
-    # (92000, 460619)
 
     print( "The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
            "This location has a linear distance of ", (location.distance( highest_point_coordinates ) / 1000),
@@ -183,11 +195,6 @@ if __name__ == "__main__":
     Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
     to the highest point.
     
-    Creating an index tutorial
-    https://rtree.readthedocs.io/en/latest/tutorial.html#creating-an-index
-    
-    Worked example 
-    https://towardsdatascience.com/connecting-pois-to-a-road-network-358a81447944
     """""
 
     # Load the ITN network
@@ -196,7 +203,7 @@ if __name__ == "__main__":
         solent_itn_json = json.load( f )
 
     # Create a list formed of all the 'roadnodes' coordinates
-    road_nodes = road_links = solent_itn_json['roadnodes']
+    road_nodes = solent_itn_json['roadnodes']
     road_nodes_list = []
     for nodes in road_nodes:
         road_nodes_list.append( road_nodes[nodes]["coords"] )
@@ -225,6 +232,29 @@ if __name__ == "__main__":
     print( "The start node is at: ", first_node )
     print( "The finish node is at: ", last_node )
 
+    # Index the dictionary to get the start of the road link.
+    # Create a list of road link ids
+    # Use this to iterate across all the coordinates
+
+    road_links = solent_itn_json['roadlinks']
+
+    road_id_list = []
+    for road_id in road_links:
+        road_id_list.append( road_id )
+    print( road_id_list )
+
+    for i in road_id_list:
+        if road_links[i]["coords"][0] == first_node:
+            print( i )
+            first_node_id = str( road_links[i]["start"] )
+    print( first_node_id )
+
+    for i in road_id_list:
+        if road_links[i]["coords"][-1] == last_node:
+            print( i )
+            last_node_id = str( road_links[i]["end"] )
+    print( last_node_id )
+
     """""  
     FIND THE SHORTEST ROUTE
     -----------------------
@@ -235,6 +265,19 @@ if __name__ == "__main__":
     you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
     (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
+    
+    Let’s make a simple 3x3 Manhattan road network:
+    g = nx.Graph()
+    w, h = 3, 3
+    We label our nodes in accordance with the formula defined by this function:
+    def get_id(r, c):
+        return r + c * w
+    We now add the nodes to the graph:
+    for r in range(h):
+        for c in range(w):
+            g.add_node(get_id(r, c))
+            print(get_id(r, c))
+    
     """""
 
     # Create an empty network
@@ -245,7 +288,26 @@ if __name__ == "__main__":
     for link in road_links:
         g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'] )
 
-    # Identify the start and finish nodes
+    # Identify the shortest path
+    path = nx.dijkstra_path( g, source=first_node_id, target=last_node_id )
+
+    # assign the path the colour red
+    shortest_path = color_path( g, path, "red" )
+
+    # Retrieve the nod coloutsd
+    node_colors, edge_colors = obtain_colors( shortest_path )
+
+    links = []  # this list will be used to populate the feature id (fid) column
+    geom = []  # this list will be used to populate the geometry column
+
+    first_node = path[0]
+    for node in path[1:]:
+        link_fid = g.edges[first_node, node]['fid']
+        links.append( link_fid )
+        geom.append( LineString( road_links[link_fid]['coords'] ) )
+        first_node = node
+
+    shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
 
     """""  
     PLOTTING
@@ -266,7 +328,6 @@ if __name__ == "__main__":
     from shapely.geometry import LineString  
     """""
 
-    """""
     # Todo: Plotting check points:
     # Suitable marker for the user location
     # Suitable marker for the highest point
@@ -277,6 +338,7 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
+    shortest_path_gpd.plot( color="black", linestyle="--" )
     plt.title( "Isle of Wight Flood Plan" )
     # y label
     plt.ylabel( "Northings" )
@@ -305,11 +367,10 @@ if __name__ == "__main__":
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show( elevation, alpha=0.5 )
+    rasterio.plot.show( elevation, alpha=0.5,  contour=False)
 
     # Create the plot
     plt.show()
-    """""
 
     """""
     EXTENDING THE REGION
@@ -332,3 +393,4 @@ if __name__ == "__main__":
     # Simple GUI to ask the user if they are walking / running / cycling
     # Return an answer if the user was on a bike or running
     # Return a value for the estimated number of steps the user will take
+    # Returns some informatin about the weather conditions
