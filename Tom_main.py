@@ -130,7 +130,7 @@ if __name__ == "__main__":
         # The user is advised to quit the application
         print( "You location is not in range, please close the application" )
         # The code stops running
-        sys.exit()
+        # sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection( tile )
@@ -176,15 +176,16 @@ if __name__ == "__main__":
     highest_point_coordinates = Point( highest_east, highest_north )
 
     # Some test coordinates
-    # (85810, 439619)
-    # (85110, 450619
-    # (85810, 457190)
-    # (90000, 450000)
-    # (90000, 430000)
-    # (85500, 439619)
-    # (85500, 450619)
-    # (85970, 458898)
-    # (90000, 450619)
+    # end to end
+    # (85810, 439619) - Disjointed.
+    # (85110, 450619  - Disjointed.
+    # (85810, 457190) - good
+    # (90000, 450000) - Disjointed
+    # (90000, 430000) - Good
+    # (85500, 439619) - Disjointed at start
+    # (85500, 450619) - Very disjointed at end
+    # (85970, 458898) - Good
+    # (90000, 450619) - Good
     # (85110, 458898) - Disjointed.
 
     print( "The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
@@ -249,7 +250,7 @@ if __name__ == "__main__":
     for i in road_id_list:
         for j in range( len( road_links[i]["coords"] ) ):
             if road_links[i]["coords"][j] == start_node:
-                first_node_id = str( road_links[i]["start"] )
+                first_node_id = str( road_links[i]["end"] )
 
     # Show the first node id
     print( "First node id is: ", first_node_id )
@@ -259,7 +260,10 @@ if __name__ == "__main__":
         for j in range( len( road_links[i]["coords"] ) ):
             if road_links[i]["coords"][j] == finish_node:
                 last_node_id = str( road_links[i]["end"] )
-                
+
+    test_first_node = 'osgb4000000026146800'
+    test_last_node = 'osgb4000000026145458'
+
     # Show the last node id
     print( "last node id is: ", last_node_id )
 
