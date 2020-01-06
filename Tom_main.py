@@ -102,6 +102,7 @@ if __name__ == "__main__":
     elevation_array = elevation.read( 1 )
 
     # Import the background map
+    background = rasterio.open( "background/raster-50k_2724246.tif" )
 
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
@@ -132,7 +133,7 @@ if __name__ == "__main__":
         # The user is advised to quit the application
         print( "You location is not in range, please close the application" )
         # The code stops running
-        # sys.exit()
+        sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection( tile )
@@ -241,17 +242,11 @@ if __name__ == "__main__":
             if road_links[i]["coords"][j] == start_node:
                 first_node_id = str( road_links[i]["start"] )
 
-    # Show the first node id
-    print( "First node id is: ", first_node_id )
-
     # Extract the finish node
     for i in road_id_list:
         for j in range( len( road_links[i]["coords"] ) ):
             if road_links[i]["coords"][j] == finish_node:
                 last_node_id = str( road_links[i]["end"] )
-
-    # Show the last node id
-    print( "last node id is: ", last_node_id )
 
     """""  
     FIND THE SHORTEST ROUTE
@@ -287,23 +282,21 @@ if __name__ == "__main__":
     # (85810, 457190) = good
     # Shortest path test coordinate: (85800,  439619)
 
-    # Populate a network containing all the roadlinks
-    # Need to add weights of each segment to the weight section
+    # Create lists of coordinates of start and end links
     start_of_link = []
     end_of_link = []
     for link in road_links:
         start_of_link.append( road_links[link]["coords"][0] )
         end_of_link.append( road_links[link]["coords"][-1] )
 
-    # Convert the lists into pixel coordinates
+    # Convert the lists into pixel coordinates to index the elevation array
     start_pixel_coords = []
     end_pixel_coords = []
-
     for i in range( len( start_of_link ) ):
         start_pixel_coords.append( elevation.index( start_of_link[i][0], start_of_link[i][1] ) )
         end_pixel_coords.append( elevation.index( end_of_link[i][0], end_of_link[i][1] ) )
 
-    # Find the elevation
+    # Query the elevation array to get the elevation
     start_elevation = []
     end_elevation = []
     for i in range( len( start_pixel_coords ) ):
@@ -320,10 +313,10 @@ if __name__ == "__main__":
     for i in road_links:
         road_index.append( i )
 
-    # Turn negatives to zeros
+    # Exclude all negative gradients
     elevation_change_no_negatives = [0 if i < 0 else i for i in elevation_change]
 
-    # Create dictinary to be indexed with road_link ids.
+    # Create dictionary to be indexed with road_link ids.
     elevation_index = {key: value for key, value in zip( road_index, elevation_change_no_negatives )}
 
     # Create a list of values corresponding to minutes added for each 10 meters
@@ -351,6 +344,7 @@ if __name__ == "__main__":
     # Create an empty network
     g = nx.Graph()
 
+    # Populate the network with edges, state the weighting for each edge
     for link in road_links:
         g.add_edge( road_links[link]['start'],
                     road_links[link]['end'],
