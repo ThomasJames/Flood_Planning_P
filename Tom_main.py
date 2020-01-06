@@ -85,7 +85,7 @@ if __name__ == "__main__":
     If the input coor- dinate is outside this box, inform the user and quit the application. This is done because 
     the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and the input point
     must be at least 5km from the edge of this raster.
-    
+
     HIGHEST POINT IDENTIFICATION    
     ----------------------------  
     Identify the highest point within a 5km radius from the user location.
@@ -156,12 +156,10 @@ if __name__ == "__main__":
                                                   {"type": "Polygon",
                                                    "coordinates": [buffer_coordinates]} )
 
-
     # create an 3d array containing the elevation data masked to the buffer zone
     elevation_mask, out_transform = mask.mask( elevation,
                                                [roi_polygon_src_coords],
                                                crop=False )
-
 
     # Search for the highest point in the buffer zone
     highest_point = np.amax( elevation_mask )
@@ -189,7 +187,7 @@ if __name__ == "__main__":
     point identified in the previous step. To successfully complete this task you could use r-trees.
     Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
     to the highest point.
-    
+
     """""
 
     # Load the ITN network
@@ -221,7 +219,7 @@ if __name__ == "__main__":
     for i in idx.nearest( query_start, 1 ):
         start_node = road_nodes_list[i]
 
-    # Find the nearest value to the finish
+    # Use rtrees to query the nearest value to the finish
     for i in idx.nearest( query_finish, 1 ):
         finish_node = road_nodes_list[i]
 
@@ -258,7 +256,6 @@ if __name__ == "__main__":
     """""  
     FIND THE SHORTEST ROUTE
     -----------------------
-
     Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
     is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
     calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
@@ -266,18 +263,13 @@ if __name__ == "__main__":
     (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     
-    Let’s make a simple 3x3 Manhattan road network:
-    g = nx.Graph()
-    w, h = 3, 3
-    We label our nodes in accordance with the formula defined by this function:
-    def get_id(r, c):
-        return r + c * w
-    We now add the nodes to the graph:
-    for r in range(h):
-        for c in range(w):
-            g.add_node(get_id(r, c))
-            print(get_id(r, c))
+    Every 0.72 seconds, we travel 1 meter 
+    Therefore the time taken to travel each segment is 0.72 x the length of the segment 
+    If the segment rises by more than 10 meters we can add a mintute 
     
+    We need to turn the weighting value in to a time value
+    
+
     """""
 
     # Some test coordinates
@@ -334,11 +326,36 @@ if __name__ == "__main__":
     # Create dictinary to be indexed with road_link ids.
     elevation_index = {key: value for key, value in zip( road_index, elevation_change_no_negatives )}
 
+    # Create a list of values corresponding to minutes added for each 10 meters
+    elevation_weighting = []
+    for i in elevation_change_no_negatives:
+        if i > 10:
+            elevation_weighting.append( 1 )
+        elif i > 20:
+            elevation_weighting.append( 2 )
+        else:
+            elevation_weighting.append( 0 )
+
+    # Create a list of link lengths
+    link_lengths = []
+    for i in road_index:
+        link_lengths.append( road_links[i]["length"] * (3600 / 5000) )
+    print( link_lengths )
+
+    # Add the elevation weighting to the link
+    road_weights = [x + y for x, y in zip( link_lengths, elevation_weighting )]
+
+    # Create a dictionary referencing 'roadlink' to the weight
+    road_weight_dict = {key: value for key, value in zip( road_index, road_weights )}
+
     # Create an empty network
     g = nx.Graph()
 
     for link in road_links:
-        g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=elevation_index[link] )
+        g.add_edge( road_links[link]['start'],
+                    road_links[link]['end'],
+                    fid=link,
+                    weight=road_links[link]['length'] )
 
     # Identify the shortest path
     path = nx.dijkstra_path( g, source=first_node_id, target=last_node_id )
@@ -346,7 +363,7 @@ if __name__ == "__main__":
     # assign the path the colour red
     shortest_path = color_path( g, path, "red" )
 
-    # Retrieve the nod coloutsd
+    # Retrieve the node colours
     node_colors, edge_colors = obtain_colors( shortest_path )
 
     links = []  # this list will be used to populate the feature id (fid) column
