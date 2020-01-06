@@ -187,11 +187,8 @@ if __name__ == "__main__":
     # (85970, 458898) - Good
     # (90000, 450619) - Good
     # (85110, 458898) - Disjointed.
-
-    print( "The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
-           "This location has a linear distance of ", (location.distance( highest_point_coordinates ) / 1000),
-           "in meters" )
-
+    # (85810, 457190) = good
+    
     """""  
     IDENTIFY THE NETWORK
     --------------------
@@ -323,6 +320,16 @@ if __name__ == "__main__":
     # Create Geopandas shortest path for plotting
     shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
 
+    # Find the total length of the journey
+    # Calorie calculator?
+    print( path )
+    # print(solent_itn_json["roadlinks"]["osgb4000000026142366"]["length"])
+
+    # road_lengths = []
+    # for i in path:
+    #     road_lengths.append(road_links[i[1:]]["length"])
+    # print(road_lengths)
+
     """""  
     PLOTTING
     --------
@@ -413,3 +420,10 @@ if __name__ == "__main__":
     # Return an answer if the user was on a bike or running
     # Return a value for the estimated number of steps the user will take
     # Returns some informatin about the weather conditions
+    # Calorie Counter
+    # Output text file
+
+    print( "There is flooding in your area, you need to travel to The coordinates of your location are ", east, north,
+           ", You need to travel to", highest_east, highest_north,
+           "This location has a linear distance of ", (location.distance( highest_point_coordinates ) / 1000),
+           "in meters" )
