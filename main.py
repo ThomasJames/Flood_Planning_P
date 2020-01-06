@@ -26,17 +26,44 @@ import geopandas as gpd
 import json
 from rasterio.mask import mask
 from rasterio import mask
+from tkinter import *
 
 
+class InputForm():
+    def __init__(self, prompt):
+        self.prompt = prompt
+        self.response = ""
+
+        def ok():
+            self.response = entry1.get(), entry2.get()
+            master.destroy()
+
+        master = Tk()
+        lbl = Label(master, text=self.prompt)
+        lbl.pack()
+        entry1 = Entry(master)
+        entry2 = Entry(master)
+        entry1.pack()
+        entry2.pack()
+
+        entry1.focus_set()
+
+        butt = Button(master, text="OK", width=10, command=ok)
+        butt.pack()
+
+        mainloop()
+
+
+# print(type(east))
 # Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
-        if b.contains( c ):
+        if b.contains(c):
             return True
         else:
             return False
     except IOError:
-        print( "Unable to perform this operation" )
+        print("Unable to perform this operation")
 
 
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
@@ -85,7 +112,8 @@ if __name__ == "__main__":
     If the input coor- dinate is outside this box, inform the user and quit the application. This is done because 
     the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and the input point
     must be at least 5km from the edge of this raster.
-
+    
+    
     HIGHEST POINT IDENTIFICATION    
     ----------------------------  
     Identify the highest point within a 5km radius from the user location.
@@ -95,27 +123,42 @@ if __name__ == "__main__":
     you can select a random point within 5km of the user.
     """""
 
-    # Import elevation map
-    elevation = rasterio.open( 'elevation/SZ.asc' )
+    input_points = InputForm("Enter position").response
 
-    # Import the background map
-    background = rasterio.open( 'background/raster-50k_2724246.tif' )
+    print("Your coordinates are:", input_points)
+    east = (int(input_points[0]))
+    north = (int(input_points[1]))
 
     # Import the isle_of_wight shape
-    island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
+    island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
+
+    # user location
+    location = Point(north, east)
+    # print(location)
+
+    # Is user on island
+    user_on_land = (island_shapefile.contains(location))
+    if user_on_land[0] == True:
+        print("User is on land")
+    else:
+        print("Please swim to shore and start again")
+        sys.exit()
+
+    # Import elevation map
+    elevation = rasterio.open('elevation/SZ.asc')
+
+    # Import the background map
+    background = rasterio.open('background/raster-50k_2724246.tif')
 
     # Ask the user for their location
-    print( "Please input your location" )
-    north, east = int( input( "east: " ) ), int( input( "north: " ) )
-
-    # Create a buffer zone of 5km
-    location = Point( east, north )
+    # print( "Please input your location" )
+    # north, east = int( input( "east: " ) ), int( input( "north: " ) )
 
     # create a to spec bounding box "tile"
-    tile = Polygon( [(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)] )
+    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
     # Create a 5km buffer
-    buffer_zone = location.buffer( 5000 )
+    buffer_zone = location.buffer(5000)
 
     # Create a 10km buffer for plotting purposes
     plot_buffer = location.buffer( 10000 )

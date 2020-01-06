@@ -26,6 +26,7 @@ import geopandas as gpd
 import json
 from rasterio.mask import mask
 from rasterio import mask
+from rasterio.enums import Resampling
 from tkinter import *
 
 class InputForm():
@@ -38,13 +39,14 @@ class InputForm():
             master.destroy()
 
         master = Tk()
+        # top = Frame()
         lbl = Label(master, text=self.prompt)
         lbl.pack()
         entry1 = Entry(master)
         entry2 = Entry(master)
         entry1.pack()
         entry2.pack()
-
+        master.geometry("170x200+30+30")
         entry1.focus_set()
 
         butt = Button(master, text="OK", width=10, command=ok)
@@ -53,6 +55,7 @@ class InputForm():
         mainloop()
 
 
+# The above class structure was found here: https://stackoverflow.com/questions/51832502/returning-a-value-from-a-tkinter-form
 
 # Function to test if any object is within a polygon
 def on_tile(c, b):
@@ -132,6 +135,20 @@ if __name__ == "__main__":
 
     # Import the background map
     background = rasterio.open('background/raster-50k_2724246.tif')
+
+    # Upscaling raster to higher res
+    upscale_factor = 2
+
+    with background as dataset:
+
+        # resample data to target shape
+        data = dataset.read(
+            out_shape=(dataset.count, int(dataset.width * upscale_factor), int(dataset.height * upscale_factor)),
+            resampling=Resampling.bilinear)
+
+        # scale image transform
+        transform = dataset.transform * dataset.transform.scale(dataset.width / data.shape[-2]), (
+                    dataset.height / data.shape[-1])
 
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
@@ -422,7 +439,8 @@ if __name__ == "__main__":
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show(elevation, alpha=1, contour=False)
+    rasterio.plot.show(elevation, alpha=1, contour=False, zorder=0)
+    rasterio.plot.show(background, alpha=0.5, contour=False, zorder=1)
 
     # Create the plot
     plt.show()
