@@ -98,8 +98,10 @@ if __name__ == "__main__":
     # Import elevation map
     elevation = rasterio.open( 'elevation/SZ.asc' )
 
-    # Import the background map
+    # Create elevation array
+    elevation_array = elevation.read( 1 )
 
+    # Import the background map
 
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
@@ -193,6 +195,7 @@ if __name__ == "__main__":
     # (90000, 450619) - Good
     # (85110, 458898) - Disjointed.
     # (85810, 457190) = good
+    # Shortest path test coordinate: (85800,  439619)
 
     """""  
     IDENTIFY THE NETWORK
@@ -208,6 +211,7 @@ if __name__ == "__main__":
     solent_itn_json = "itn/solent_itn.json"
     with open( solent_itn_json, "r" ) as f:
         solent_itn_json = json.load( f )
+    road_links = solent_itn_json['roadlinks']
 
     # Create a list formed of all the 'roadnodes' coordinates
     road_nodes = solent_itn_json['roadnodes']
@@ -291,11 +295,48 @@ if __name__ == "__main__":
     
     """""
 
+    # Populate a network containing all the roadlinks
+    # Need to add weights of each segment to the weight section
+    start_of_link = []
+    end_of_link = []
+    for link in road_links:
+        start_of_link.append( road_links[link]["coords"][0] )
+        end_of_link.append( road_links[link]["coords"][-1] )
+
+    # Two lists,  containing the start link cooridnates, and end link coordinates
+    print( start_of_link )
+    print( end_of_link )
+
+    # Convert the lists into pixel coordinates
+    start_pixel_coords = []
+    end_pixel_coords = []
+
+    for i in range( len( start_of_link ) ):
+        start_pixel_coords.append( elevation.index( start_of_link[i][0], start_of_link[i][1] ) )
+        end_pixel_coords.append( elevation.index( end_of_link[i][0], end_of_link[i][1] ) )
+
+    print( start_pixel_coords )
+    print( end_pixel_coords )
+
+    # Find the elevation
+    start_elevation = []
+    end_elevation = []
+    for i in range( len( start_pixel_coords ) ):
+        start_elevation.append( elevation_array[start_pixel_coords[i][0]][start_pixel_coords[i][1]] )
+        end_elevation.append( elevation_array[end_pixel_coords[i][0]][end_pixel_coords[i][1]] )
+    print( start_elevation )
+    print( end_elevation )
+
+    elevation_change = []
+    for i in range( len( start_elevation ) ):
+        elevation_change.append( (start_elevation[i]) - (end_elevation[i]) )
+
+    print( elevation_change )
+
     # Create an empty network
     g = nx.Graph()
 
-    # Populate a network containing all the roadlinks
-    road_links = solent_itn_json['roadlinks']
+    # Populate the network with the road edges - Weighting based on road lenghth - Needs to include elevation
     for link in road_links:
         g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'] )
 
@@ -321,50 +362,6 @@ if __name__ == "__main__":
 
     # Create Geopandas shortest path for plotting
     shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
-
-    elevation_array = elevation.read( 1 )
-
-    print( elevation_array.shape )
-
-    """""  
-    Rough Idea of how to iterate through a sequence to find the elevation weights of each edge
-    """""
-
-    # Test to get the coordinates of the start link
-    start_coordinates = []
-    for link in road_links:
-        if road_links[link]["start"] == 'osgb4000000026147684':
-            link_start = (road_links[link]["coords"][0])
-
-    print( link_start )
-
-    end_coordinates = []
-    for link in road_links:
-        if road_links[link]["start"] == 'osgb4000000026147682':
-            link_end = (road_links[link]["coords"][-1])
-
-    # Test to get the coordinates of the end link
-    # Idea - Make a list of start elevations, and a list of end elevations
-    # Subtract the lists from each other
-
-    start_height_east, start_height_north = elevation.index( link_start[0], link_start[1] )
-    end_height_east, send_height_north = elevation.index( link_end[0], link_end[1] )
-
-    start_link_elevation = elevation_array[start_height_east][start_height_north]
-    end_link_elevation = elevation_array[end_height_east][send_height_north]
-
-    start_elevations = []
-    end_elevations = []
-
-    # for loop to exclude all values that are not +
-    # Sum the elevation change.
-    
-    elevation_change = end_link_elevation - start_link_elevation
-    print( elevation_change )
-
-    # Append all posotive elevation changes to a list
-    # Sum them
-    # Calculate how many minutes will be added to the journey
 
     """""  
     PLOTTING
@@ -429,7 +426,7 @@ if __name__ == "__main__":
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show( elevation, alpha=0.5, contour=False )
+    rasterio.plot.show( elevation, alpha=1, contour=False )
 
     # Create the plot
     plt.show()
