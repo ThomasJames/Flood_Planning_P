@@ -328,7 +328,7 @@ if __name__ == "__main__":
     for i in road_links:
         road_index.append( i )
 
-    # Turn negatives to zeros 
+    # Turn negatives to zeros
     elevation_change_no_negatives = [0 if i < 0 else i for i in elevation_change]
 
     # Create dictinary to be indexed with road_link ids.
@@ -338,7 +338,7 @@ if __name__ == "__main__":
     g = nx.Graph()
 
     for link in road_links:
-        g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]["length"] )
+        g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=elevation_index[link] )
 
     # Identify the shortest path
     path = nx.dijkstra_path( g, source=first_node_id, target=last_node_id )

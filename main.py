@@ -176,14 +176,15 @@ if __name__ == "__main__":
     highest_point_coordinates = Point( highest_east, highest_north )
 
     # Some test coordinates
-    # (85810, 439619) Works
-    # (85110, 450619  Last node not defined
-    # (85810, 457190) Works
-    # (90000, 450000) Last node not defined
-    # (90000, 430000) Out of range
-    # (85500, 439619) Works
-    # (85500, 450619) Last node not defined
-    # (85970, 458898) Works
+    # (85810, 439619)
+    # (85110, 450619
+    # (85810, 457190)
+    # (90000, 450000)
+    # (90000, 430000)
+    # (85500, 439619)
+    # (85500, 450619)
+    # (85970, 458898)
+    # (90000, 450619)
 
     print( "The coordinates of your location are ", east, north, ", You need to travel to", highest_east, highest_north,
            "This location has a linear distance of ", (location.distance( highest_point_coordinates ) / 1000),
@@ -225,13 +226,13 @@ if __name__ == "__main__":
 
     # Find the nearest value to the start
     for i in idx.nearest( query_start, 1 ):
-        first_node = road_nodes_list[i]
+        start_node = road_nodes_list[i]
 
     # Find the nearest value to the finish
     for i in idx.nearest( query_finish, 1 ):
         last_node = road_nodes_list[i]
 
-    print( "The start node is at: ", first_node )
+    print( "The start node is at: ", start_node )
     print( "The finish node is at: ", last_node )
 
     # Index the dictionary to get the start of the road link.
@@ -247,16 +248,16 @@ if __name__ == "__main__":
 
     for i in road_id_list:
         for j in range( len( road_links[i]["coords"] ) ):
-            if road_links[i]["coords"][j] == first_node:
+            if road_links[i]["coords"][j] == start_node:
                 print( i )
-                first_node_id = str( road_links[i]["end"] )
+                first_node_id = str( road_links[i]["start"] )
     print( "First node id is: ", first_node_id )
 
     for i in road_id_list:
         for j in range( len( road_links[i]["coords"] ) ):
             if road_links[i]["coords"][j] == last_node:
                 print( i )
-                last_node_id = str( road_links[i]["end"] )
+                last_node_id = str( road_links[i]["start"] )
     print( "last node id is: ", last_node_id )
 
     """""  
@@ -304,12 +305,12 @@ if __name__ == "__main__":
     links = []  # this list will be used to populate the feature id (fid) column
     geom = []  # this list will be used to populate the geometry column
 
-    first_node = path[0]
+    first_node_in_path = path[0]
     for node in path[1:]:
-        link_fid = g.edges[first_node, node]['fid']
+        link_fid = g.edges[first_node_in_path, node]['fid']
         links.append( link_fid )
         geom.append( LineString( road_links[link_fid]['coords'] ) )
-        first_node = node
+        first_node_in_path = node
 
     shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
 
@@ -342,38 +343,9 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
-    shortest_path_gpd.plot( color="black", linestyle="--" )
-    plt.title( "Isle of Wight Flood Plan" )
-    # y label
-    plt.ylabel( "Northings" )
-    # x label
-    plt.xlabel( "Eastings" )
-    # 10km northings limit
-    plt.ylim( (plot_buffer_bounds[1], plot_buffer_bounds[3]) )
-    # 10km easting limit
-    plt.xlim( (plot_buffer_bounds[0], plot_buffer_bounds[2]) )
-    # North Arrow (x, y) to (x+dx, y+dy).
-    plt.arrow( plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200 )
-    plt.text( plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N" )
-    # Scale bar (set to 5km)
-    plt.arrow( plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0 )
-    plt.text( plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km" )
-    # User location
-    plt.scatter( east, north, color="black", marker=11 )
-    # Plot the first node
-    plt.scatter( first_node[0], first_node[1], color="black", marker="x" )
-    # Nearest node to user
-    plt.scatter( highest_east, highest_north, color="black", marker=11 )
-    # highest point
-    plt.scatter( last_node[0], last_node[1], color="black", marker="x" )
-    # Plotting of the buffer zone
-    plt.fill( x_bi, y_bi, color="skyblue", alpha=0.4 )
 
-    # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
-    # Plotting of the elevation
-    rasterio.plot.show( elevation, alpha=0.5, contour=False )
+    rasterio.plot( elevation )
 
-    # Create the plot
     plt.show()
 
     """""
