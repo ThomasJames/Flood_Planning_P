@@ -182,21 +182,6 @@ if __name__ == "__main__":
     # Create a 'shapley' point for the highest point
     highest_point_coordinates = Point( highest_east, highest_north )
 
-    # Some test coordinates
-    # end to end
-    # (85810, 439619) - Disjointed.
-    # (85110, 450619  - Disjointed.
-    # (85810, 457190) - good
-    # (90000, 450000) - Disjointed
-    # (90000, 430000) - Good
-    # (85500, 439619) - Disjointed at start
-    # (85500, 450619) - Very disjointed at end
-    # (85970, 458898) - Good
-    # (90000, 450619) - Good
-    # (85110, 458898) - Disjointed.
-    # (85810, 457190) = good
-    # Shortest path test coordinate: (85800,  439619)
-
     """""  
     IDENTIFY THE NETWORK
     --------------------
@@ -295,6 +280,21 @@ if __name__ == "__main__":
     
     """""
 
+    # Some test coordinates
+    # end to end
+    # (85810, 439619) - Disjointed.
+    # (85110, 450619  - Disjointed.
+    # (85810, 457190) - good
+    # (90000, 450000) - Disjointed
+    # (90000, 430000) - Good
+    # (85500, 439619) - Disjointed at start
+    # (85500, 450619) - Very disjointed at end
+    # (85970, 458898) - Good
+    # (90000, 450619) - Good
+    # (85110, 458898) - Disjointed.
+    # (85810, 457190) = good
+    # Shortest path test coordinate: (85800,  439619)
+
     # Populate a network containing all the roadlinks
     # Need to add weights of each segment to the weight section
     start_of_link = []
@@ -302,10 +302,6 @@ if __name__ == "__main__":
     for link in road_links:
         start_of_link.append( road_links[link]["coords"][0] )
         end_of_link.append( road_links[link]["coords"][-1] )
-
-    # Two lists,  containing the start link cooridnates, and end link coordinates
-    print( start_of_link )
-    print( end_of_link )
 
     # Convert the lists into pixel coordinates
     start_pixel_coords = []
@@ -315,30 +311,34 @@ if __name__ == "__main__":
         start_pixel_coords.append( elevation.index( start_of_link[i][0], start_of_link[i][1] ) )
         end_pixel_coords.append( elevation.index( end_of_link[i][0], end_of_link[i][1] ) )
 
-    print( start_pixel_coords )
-    print( end_pixel_coords )
-
     # Find the elevation
     start_elevation = []
     end_elevation = []
     for i in range( len( start_pixel_coords ) ):
         start_elevation.append( elevation_array[start_pixel_coords[i][0]][start_pixel_coords[i][1]] )
         end_elevation.append( elevation_array[end_pixel_coords[i][0]][end_pixel_coords[i][1]] )
-    print( start_elevation )
-    print( end_elevation )
 
+    # Calculate the elevation change for each roadlink.
     elevation_change = []
     for i in range( len( start_elevation ) ):
         elevation_change.append( (start_elevation[i]) - (end_elevation[i]) )
 
-    print( elevation_change )
+    # Extract the road index, which are in the same order as the elevations.
+    road_index = []
+    for i in road_links:
+        road_index.append( i )
+
+    # Turn negatives to zeros 
+    elevation_change_no_negatives = [0 if i < 0 else i for i in elevation_change]
+
+    # Create dictinary to be indexed with road_link ids.
+    elevation_index = {key: value for key, value in zip( road_index, elevation_change_no_negatives )}
 
     # Create an empty network
     g = nx.Graph()
 
-    # Populate the network with the road edges - Weighting based on road lenghth - Needs to include elevation
     for link in road_links:
-        g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'] )
+        g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]["length"] )
 
     # Identify the shortest path
     path = nx.dijkstra_path( g, source=first_node_id, target=last_node_id )
