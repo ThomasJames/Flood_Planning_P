@@ -85,7 +85,7 @@ if __name__ == "__main__":
     If the input coor- dinate is outside this box, inform the user and quit the application. This is done because 
     the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and the input point
     must be at least 5km from the edge of this raster.
-    
+
     HIGHEST POINT IDENTIFICATION    
     ----------------------------  
     Identify the highest point within a 5km radius from the user location.
@@ -98,8 +98,11 @@ if __name__ == "__main__":
     # Import elevation map
     elevation = rasterio.open( 'elevation/SZ.asc' )
 
-    # Import the background map
+    # Create elevation array
+    elevation_array = elevation.read( 1 )
 
+    # Import the background map
+    background = rasterio.open( "background/raster-50k_2724246.tif" )
 
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
@@ -130,7 +133,7 @@ if __name__ == "__main__":
         # The user is advised to quit the application
         print( "You location is not in range, please close the application" )
         # The code stops running
-        # sys.exit()
+        sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection( tile )
@@ -154,12 +157,10 @@ if __name__ == "__main__":
                                                   {"type": "Polygon",
                                                    "coordinates": [buffer_coordinates]} )
 
-
     # create an 3d array containing the elevation data masked to the buffer zone
     elevation_mask, out_transform = mask.mask( elevation,
                                                [roi_polygon_src_coords],
                                                crop=False )
-
 
     # Search for the highest point in the buffer zone
     highest_point = np.amax( elevation_mask )
@@ -180,20 +181,6 @@ if __name__ == "__main__":
     # Create a 'shapley' point for the highest point
     highest_point_coordinates = Point( highest_east, highest_north )
 
-    # Some test coordinates
-    # end to end
-    # (85810, 439619) - Disjointed.
-    # (85110, 450619  - Disjointed.
-    # (85810, 457190) - good
-    # (90000, 450000) - Disjointed
-    # (90000, 430000) - Good
-    # (85500, 439619) - Disjointed at start
-    # (85500, 450619) - Very disjointed at end
-    # (85970, 458898) - Good
-    # (90000, 450619) - Good
-    # (85110, 458898) - Disjointed.
-    # (85810, 457190) = good
-
     """""  
     IDENTIFY THE NETWORK
     --------------------
@@ -201,13 +188,14 @@ if __name__ == "__main__":
     point identified in the previous step. To successfully complete this task you could use r-trees.
     Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
     to the highest point.
-    
+
     """""
 
     # Load the ITN network
     solent_itn_json = "itn/solent_itn.json"
     with open( solent_itn_json, "r" ) as f:
         solent_itn_json = json.load( f )
+    road_links = solent_itn_json['roadlinks']
 
     # Create a list formed of all the 'roadnodes' coordinates
     road_nodes = solent_itn_json['roadnodes']
@@ -232,7 +220,7 @@ if __name__ == "__main__":
     for i in idx.nearest( query_start, 1 ):
         start_node = road_nodes_list[i]
 
-    # Find the nearest value to the finish
+    # Use rtrees to query the nearest value to the finish
     for i in idx.nearest( query_finish, 1 ):
         finish_node = road_nodes_list[i]
 
@@ -254,22 +242,15 @@ if __name__ == "__main__":
             if road_links[i]["coords"][j] == start_node:
                 first_node_id = str( road_links[i]["start"] )
 
-    # Show the first node id
-    print( "First node id is: ", first_node_id )
-
     # Extract the finish node
     for i in road_id_list:
         for j in range( len( road_links[i]["coords"] ) ):
             if road_links[i]["coords"][j] == finish_node:
                 last_node_id = str( road_links[i]["end"] )
 
-    # Show the last node id
-    print( "last node id is: ", last_node_id )
-
     """""  
     FIND THE SHORTEST ROUTE
     -----------------------
-
     Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
     is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
     calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
@@ -277,27 +258,98 @@ if __name__ == "__main__":
     (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
     
-    Let’s make a simple 3x3 Manhattan road network:
-    g = nx.Graph()
-    w, h = 3, 3
-    We label our nodes in accordance with the formula defined by this function:
-    def get_id(r, c):
-        return r + c * w
-    We now add the nodes to the graph:
-    for r in range(h):
-        for c in range(w):
-            g.add_node(get_id(r, c))
-            print(get_id(r, c))
+    Every 0.72 seconds, we travel 1 meter 
+    Therefore the time taken to travel each segment is 0.72 x the length of the segment 
+    If the segment rises by more than 10 meters we can add a mintute 
     
+    We need to turn the weighting value in to a time value
+    
+
     """""
+
+    # Some test coordinates
+    # end to end
+    # (85810, 439619) - Disjointed.
+    # (85110, 450619  - Disjointed.
+    # (85810, 457190) - good
+    # (90000, 450000) - Disjointed
+    # (90000, 430000) - Good
+    # (85500, 439619) - Disjointed at start
+    # (85500, 450619) - Very disjointed at end
+    # (85970, 458898) - Good
+    # (90000, 450619) - Good
+    # (85110, 458898) - Disjointed.
+    # (85810, 457190) = good
+    # Shortest path test coordinate: (85800,  439619)
+
+    # Create lists of coordinates of start and end links
+    start_of_link = []
+    end_of_link = []
+    for link in road_links:
+        start_of_link.append( road_links[link]["coords"][0] )
+        end_of_link.append( road_links[link]["coords"][-1] )
+
+    # Convert the lists into pixel coordinates to index the elevation array
+    start_pixel_coords = []
+    end_pixel_coords = []
+    for i in range( len( start_of_link ) ):
+        start_pixel_coords.append( elevation.index( start_of_link[i][0], start_of_link[i][1] ) )
+        end_pixel_coords.append( elevation.index( end_of_link[i][0], end_of_link[i][1] ) )
+
+    # Query the elevation array to get the elevation
+    start_elevation = []
+    end_elevation = []
+    for i in range( len( start_pixel_coords ) ):
+        start_elevation.append( elevation_array[start_pixel_coords[i][0]][start_pixel_coords[i][1]] )
+        end_elevation.append( elevation_array[end_pixel_coords[i][0]][end_pixel_coords[i][1]] )
+
+    # Calculate the elevation change for each roadlink.
+    elevation_change = []
+    for i in range( len( start_elevation ) ):
+        elevation_change.append( (start_elevation[i]) - (end_elevation[i]) )
+
+    # Extract the road index, which are in the same order as the elevations.
+    road_index = []
+    for i in road_links:
+        road_index.append( i )
+
+    # Exclude all negative gradients
+    elevation_change_no_negatives = [0 if i < 0 else i for i in elevation_change]
+
+    # Create dictionary to be indexed with road_link ids.
+    elevation_index = {key: value for key, value in zip( road_index, elevation_change_no_negatives )}
+
+    # Create a list of values corresponding to minutes added for each 10 meters
+    elevation_weighting = []
+    for i in elevation_change_no_negatives:
+        if i > 10:
+            elevation_weighting.append( 1 )
+        elif i > 20:
+            elevation_weighting.append( 2 )
+        else:
+            elevation_weighting.append( 0 )
+
+    # Create a list of link lengths
+    link_lengths = []
+    for i in road_index:
+        link_lengths.append( road_links[i]["length"] * (3600 / 5000) )
+    print( link_lengths )
+
+    # Add the elevation weighting to the link
+    road_weights = [x + y for x, y in zip( link_lengths, elevation_weighting )]
+
+    # Create a dictionary referencing 'roadlink' to the weight
+    road_weight_dict = {key: value for key, value in zip( road_index, road_weights )}
 
     # Create an empty network
     g = nx.Graph()
 
-    # Populate a network containing all the roadlinks
-    road_links = solent_itn_json['roadlinks']
+    # Populate the network with edges, state the weighting for each edge
     for link in road_links:
-        g.add_edge( road_links[link]['start'], road_links[link]['end'], fid=link, weight=road_links[link]['length'] )
+        g.add_edge( road_links[link]['start'],
+                    road_links[link]['end'],
+                    fid=link,
+                    weight=road_links[link]['length'] )
 
     # Identify the shortest path
     path = nx.dijkstra_path( g, source=first_node_id, target=last_node_id )
@@ -305,7 +357,7 @@ if __name__ == "__main__":
     # assign the path the colour red
     shortest_path = color_path( g, path, "red" )
 
-    # Retrieve the nod coloutsd
+    # Retrieve the node colours
     node_colors, edge_colors = obtain_colors( shortest_path )
 
     links = []  # this list will be used to populate the feature id (fid) column
@@ -321,50 +373,6 @@ if __name__ == "__main__":
 
     # Create Geopandas shortest path for plotting
     shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
-
-    elevation_array = elevation.read( 1 )
-
-    print( elevation_array.shape )
-
-    """""  
-    Rough Idea of how to iterate through a sequence to find the elevation weights of each edge
-    """""
-
-    # Test to get the coordinates of the start link
-    start_coordinates = []
-    for link in road_links:
-        if road_links[link]["start"] == 'osgb4000000026147684':
-            link_start = (road_links[link]["coords"][0])
-
-    print( link_start )
-
-    end_coordinates = []
-    for link in road_links:
-        if road_links[link]["start"] == 'osgb4000000026147682':
-            link_end = (road_links[link]["coords"][-1])
-
-    # Test to get the coordinates of the end link
-    # Idea - Make a list of start elevations, and a list of end elevations
-    # Subtract the lists from each other
-
-    start_height_east, start_height_north = elevation.index( link_start[0], link_start[1] )
-    end_height_east, send_height_north = elevation.index( link_end[0], link_end[1] )
-
-    start_link_elevation = elevation_array[start_height_east][start_height_north]
-    end_link_elevation = elevation_array[end_height_east][send_height_north]
-
-    start_elevations = []
-    end_elevations = []
-
-    # for loop to exclude all values that are not +
-    # Sum the elevation change.
-    
-    elevation_change = end_link_elevation - start_link_elevation
-    print( elevation_change )
-
-    # Append all posotive elevation changes to a list
-    # Sum them
-    # Calculate how many minutes will be added to the journey
 
     """""  
     PLOTTING
@@ -429,7 +437,7 @@ if __name__ == "__main__":
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show( elevation, alpha=0.5, contour=False )
+    rasterio.plot.show( elevation, alpha=1, contour=False )
 
     # Create the plot
     plt.show()
