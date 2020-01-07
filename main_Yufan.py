@@ -121,7 +121,7 @@ if __name__ == "__main__":
     buffer_zone = location.buffer(5000)
 
     # Create a 10km buffer for plotting purposes
-    plot_buffer = location.buffer(5000)
+    plot_buffer = location.buffer(10000)
 
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple(plot_buffer.bounds)
@@ -402,8 +402,15 @@ if __name__ == "__main__":
     # a 10km limit around the user
     # an automatically adjusting North arrow and scale bar
     # todo: Elevation side bar
-    # todo: Elevation side bar
+    # Plot out data with Matplotlib's 'contour'
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+
+    # plt.gca().set_aspect('equal', adjustable='box')
+
     # todo: A legend - Start / Highest / Shortest path
+    # plt.legend()
+
     shortest_path_gpd.plot(color="salmon", )
     plt.title("Isle of Wight Flood Plan")
     # y label
@@ -428,7 +435,9 @@ if __name__ == "__main__":
     plt.scatter(highest_east, highest_north, color="white", marker=11)
     # highest point
     plt.scatter(finish_node[0], finish_node[1], color="white", marker="x")
-
+    plt.contourf(elevation_array, cmap="viridis",
+                 levels=list(range(0, 300, 10)))
+    cbar = plt.colorbar()
     # plt.imshow(background.read(1)
     # Open rasterio
     # background.colormap(1)
