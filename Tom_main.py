@@ -56,12 +56,15 @@ def is_point_or_shape_in_shape(shapley_object, shape):
 # Coordinate argument - Can be in (x, y) form
 # Buffer argument - Must be a shapely file.
 def is_link_inside_polygon(coordinate, buffer):
-    for coord_x_y in coordinate:
-        point = Point( coord_x_y )  # Convert to shapley point
-        if buffer.contains( point ):  # Test for
-            return True
-        else:
-            return False
+    try:
+        for coord_x_y in coordinate:
+            point = Point( coord_x_y )  # Convert to shapley point
+            if buffer.contains( point ):  # Test for
+                return True
+            else:
+                return False
+    except IOError:
+        print( "Unable to perform this operation" )
 
 
 # Function to return adjustment time
@@ -70,17 +73,20 @@ def is_link_inside_polygon(coordinate, buffer):
 # transformation_matrix - The transformation matrix output.
 def elevation_adjustment(coords, elevation_array, transformation_matrix):
     rise = 0
-    for i, point in enumerate( coords ):
-        x_coord, y_coord = point
-        if i == 0:
-            last_height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]
-        else:
-            height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]
-            if height > last_height:
-                rise += height - last_height
-            last_height = height
-    elevation_adjustment = rise / 10
-    return elevation_adjustment
+    try:
+        for i, point in enumerate( coords ):
+            x_coord, y_coord = point
+            if i == 0:
+                back_height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]
+            else:
+                fore_height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]
+                if fore_height > back_height:
+                    rise += fore_height - back_height
+                back_height = fore_height
+        elevation_adjustment = rise / 10
+        return elevation_adjustment
+    except IOError:
+        print( "Unable to perform this operation" )
 
 
 # Function to generate color path
@@ -88,25 +94,31 @@ def elevation_adjustment(coords, elevation_array, transformation_matrix):
 # path - the output path from the dijkstra_path
 # color - Built in default to blue
 def color_path(network, path, color="blue"):
-    res = network.copy()
-    first = path[0]
-    for node in path[1:]:
-        res.edges[first, node]["color"] = color
-        first = node
-    return res
+    try:
+        res = network.copy()
+        first = path[0]
+        for node in path[1:]:
+            res.edges[first, node]["color"] = color
+            first = node
+        return res
+    except IOError:
+        print( "Unable to perform this operation" )
 
 
 # Function to obtain colours
 # Graph to which you wish to obtain the colours
 # Default nodes and edges are assiggned within the function
 def obtain_colors(graph, default_node="blue", default_edge="black"):
-    node_colors = []
-    for node in graph.nodes:
-        node_colors.append( graph.nodes[node].get( 'color', default_node ) )
-    edge_colors = []
-    for u, v in graph.edges:
-        edge_colors.append( graph.edges[u, v].get( 'color', default_edge ) )
-    return node_colors, edge_colors
+    try:
+        node_colors = []
+        for node in graph.nodes:
+            node_colors.append( graph.nodes[node].get( 'color', default_node ) )
+        edge_colors = []
+        for u, v in graph.edges:
+            edge_colors.append( graph.edges[u, v].get( 'color', default_edge ) )
+        return node_colors, edge_colors
+    except IOError:
+        print( "Unable to perform this operation" )
 
 
 """""
@@ -269,10 +281,6 @@ if __name__ == "__main__":
     # Use rTrees to query the nearest value to the finish
     for i in idx.nearest( query_finish, 1 ):
         finish_node = road_nodes_list[i]
-
-    # Display the node coordinates
-    print( "The start node is at: ", start_node )
-    print( "The finish node is at: ", finish_node )
 
     # Extract the 'roadlinks' data
     road_links = solent_itn_json['roadlinks']
@@ -527,7 +535,7 @@ if __name__ == "__main__":
         str( calories_burnt )
     ]
 
-    # Write the information output to a file. 
+    # Write the information output to a file.
     information_file = open( "Information_about_your_journey.txt", "w" )
     for line in information_list:
         # write line to output file
