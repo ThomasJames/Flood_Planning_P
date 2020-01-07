@@ -26,6 +26,7 @@ import geopandas as gpd
 import json
 from rasterio.mask import mask
 from rasterio import mask
+from rasterio.transform import xy, rowcol, from_bounds
 
 
 # Function to test if any object is within a polygon
@@ -103,9 +104,7 @@ if __name__ == "__main__":
 
     # Import the background map
     background = rasterio.open( "background/raster-50k_2724246.tif" )
-
-    # Import the isle_of_wight shape
-    island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
+    background_array = background.read( 1 )
 
     # Ask the user for their location
     print( "Please input your location" )
@@ -127,7 +126,10 @@ if __name__ == "__main__":
     plot_buffer_bounds = tuple( plot_buffer.bounds )
 
     # Test is coordinate buffer zone is within bounding box
-    if on_tile( buffer_zone, tile ):
+    if on_tile(
+            buffer_zone,
+            tile
+    ):
         print( " " )
     else:
         # The user is advised to quit the application
@@ -149,18 +151,24 @@ if __name__ == "__main__":
         easting_list.append( i )
     for i in highest_north:
         northing_list.append( i )
-    buffer_coordinates = generate_coordinates( easting_list, northing_list )
+    buffer_coordinates = generate_coordinates(
+        easting_list,
+        northing_list
+    )
 
     # Warp the coordinates
-    roi_polygon_src_coords = warp.transform_geom( {'init': 'EPSG:27700'},
-                                                  elevation.crs,
-                                                  {"type": "Polygon",
-                                                   "coordinates": [buffer_coordinates]} )
+    roi_polygon_src_coords = warp.transform_geom(
+        {'init': 'EPSG:27700'},
+        elevation.crs,
+        {"type": "Polygon",
+         "coordinates": [buffer_coordinates]}
+    )
 
     # create an 3d array containing the elevation data masked to the buffer zone
     elevation_mask, out_transform = mask.mask( elevation,
                                                [roi_polygon_src_coords],
-                                               crop=False )
+                                               crop=False
+                                               )
 
     # Search for the highest point in the buffer zone
     highest_point = np.amax( elevation_mask )
@@ -176,7 +184,8 @@ if __name__ == "__main__":
     highest_east, highest_north = rasterio.transform.xy( out_transform,
                                                          highest_east,
                                                          highest_north,
-                                                         offset='center' )
+                                                         offset='center'
+                                                         )
 
     # Create a 'shapley' point for the highest point
     highest_point_coordinates = Point( highest_east, highest_north )
@@ -220,7 +229,7 @@ if __name__ == "__main__":
     for i in idx.nearest( query_start, 1 ):
         start_node = road_nodes_list[i]
 
-    # Use rtrees to query the nearest value to the finish
+    # Use rTrees to query the nearest value to the finish
     for i in idx.nearest( query_finish, 1 ):
         finish_node = road_nodes_list[i]
 
@@ -266,6 +275,7 @@ if __name__ == "__main__":
     
     """""
 
+
     # Some test coordinates
     # end to end
     # (85810, 439619) - Disjointed.
@@ -281,83 +291,105 @@ if __name__ == "__main__":
     # (85810, 457190) = good
     # Shortest path test coordinate: (85800,  439619)
 
-    # Create lists of coordinates of start and end links
-    start_of_link = []
-    end_of_link = []
+    # Create the network
+
+    # Additional consideration - Function to ensure that all the roads are within the buffer zone
+    def is_link_inside_polygon(coordinate, buffer):
+        inside = True
+        for x_y in coordinate:
+            point_obj = Point( x_y )
+            if not buffer.contains( point_obj ):
+                inside = False
+                break
+        return inside
+
+
+    def elevation_adjustment(coords, heights_array, affine_transform):
+        total_climb = 0
+        for i, point in enumerate( coords ):
+            x, y = point
+            if i == 0:
+                last_height = heights_array[rowcol( affine_transform, x, y )]
+            else:
+                height = heights_array[rowcol( affine_transform, x, y )]
+                if height > last_height:
+                    total_climb += height - last_height
+
+                last_height = height
+        elevation_adjustment = total_climb / 10
+        return elevation_adjustment
+
+
+    # Populate a network with the edges and nodes
+    network = nx.DiGraph()
     for link in road_links:
-        start_of_link.append( road_links[link]["coords"][0] )
-        end_of_link.append( road_links[link]["coords"][-1] )
+        road_length = road_links[link]['length']
+        road_coordinates = road_links[link]['coords']
 
-    # Convert the lists into pixel coordinates to index the elevation array
-    start_pixel_coords = []
-    end_pixel_coords = []
-    for i in range( len( start_of_link ) ):
-        start_pixel_coords.append( elevation.index( start_of_link[i][0], start_of_link[i][1] ) )
-        end_pixel_coords.append( elevation.index( end_of_link[i][0], end_of_link[i][1] ) )
+        # Exclude values that do not lie inside of the buffer zone
+        if not is_link_inside_polygon(
+                road_coordinates,
+                buffer_zone
+        ):
+            continue
 
-    # Query the elevation array to get the elevation
-    start_elevation = []
-    end_elevation = []
-    for i in range( len( start_pixel_coords ) ):
-        start_elevation.append( elevation_array[start_pixel_coords[i][0]][start_pixel_coords[i][1]] )
-        end_elevation.append( elevation_array[end_pixel_coords[i][0]][end_pixel_coords[i][1]] )
+        # Calculate the basic travel time for a given road length
+        basic_travel_time = road_length / 5000 * 60
 
-    # Calculate the elevation change for each roadlink.
-    elevation_change = []
-    for i in range( len( start_elevation ) ):
-        elevation_change.append( (start_elevation[i]) - (end_elevation[i]) )
+        # For forward movements across the road link
+        # Adjust the data to take into account the elevation change
+        adjusted_to_elevation = elevation_adjustment(
+            road_coordinates,
+            elevation_array,
+            out_transform  # Transformation matrix
+        )
 
-    # Extract the road index, which are in the same order as the elevations.
-    road_index = []
-    for i in road_links:
-        road_index.append( i )
+        # Calculate the total time weight for forwards movement
+        time_weight = basic_travel_time + adjusted_to_elevation
 
-    # Exclude all negative gradients
-    elevation_change_no_negatives = [0 if i < 0 else i for i in elevation_change]
+        # Populate the network with the forwards weighted edges
+        network.add_edge(
+            road_links[link]['start'],
+            road_links[link]['end'],
+            fid=link,
+            length=road_links[link]['length'],
+            time=time_weight
+        )
 
-    # Create dictionary to be indexed with road_link ids.
-    elevation_index = {key: value for key, value in zip( road_index, elevation_change_no_negatives )}
+        # For backwards movement across the road link
+        # Adjust the elevation for the elevation
+        adjusted_to_elevation = elevation_adjustment(
+            (reversed( road_coordinates )),  # Reversed to account for moving backwards across the roadlink
+            elevation_array,
+            out_transform  # Transformation matrix
+        )
 
-    # Create a list of values corresponding to minutes added for each 10 meters
-    elevation_weighting = []
-    for i in elevation_change_no_negatives:
-        if i > 10:
-            elevation_weighting.append( 1 )
-        elif i > 20:
-            elevation_weighting.append( 2 )
-        else:
-            elevation_weighting.append( 0 )
+        # Calculate the total time weight for backwards movement
+        time_weight = basic_travel_time + adjusted_to_elevation
 
-    print( elevation_weighting )
+        # Populate the network with the backwards weighted edges
+        network.add_edge(
+            road_links[link]['end'],
+            road_links[link]['start'],
+            fid=link,
+            length=road_links[link]['length'],
+            time=time_weight
+        )
 
-    # Create a list of link lengths, adjusted for time.
-    link_lengths = []
-    for i in road_index:
-        link_lengths.append( road_links[i]["length"] * (3600 / 5000) )
-    print( link_lengths )
-
-    # Add the elevation weighting to the link
-    road_weights = [x + y for x, y in zip( link_lengths, elevation_weighting )]
-
-    # Create a dictionary referencing 'roadlink' to the weight
-    road_weight_dict = {key: value for key, value in zip( road_index, road_weights )}
-
-    # Create an empty network
-    g = nx.Graph()
-
-
-    # Populate the network with edges, state the weighting for each edge
-    for link in road_links:
-        g.add_edge( road_links[link]['start'],
-                    road_links[link]['end'],
-                    fid=link,
-                    weight=road_links[link]['length'] )
-
-    # Identify the shortest path
-    path = nx.dijkstra_path( g, source=first_node_id, target=last_node_id )
+    # Identify the shortest path using dijkstra_path function
+    path = nx.dijkstra_path(
+        network,
+        source=first_node_id,
+        target=last_node_id,
+        weight='time'
+    )
 
     # assign the path the colour red
-    shortest_path = color_path( g, path, "red" )
+    shortest_path = color_path(
+        network,
+        path,
+        "red"
+    )
 
     # Retrieve the node colours
     node_colors, edge_colors = obtain_colors( shortest_path )
@@ -368,13 +400,15 @@ if __name__ == "__main__":
     # Populate the shortest path
     first_node = path[0]
     for node in path[1:]:
-        link_fid = g.edges[first_node, node]['fid']
+        link_fid = network.edges[first_node, node]['fid']
         links.append( link_fid )
         geom.append( LineString( road_links[link_fid]['coords'] ) )
         first_node = node
 
     # Create Geopandas shortest path for plotting
-    shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
+    shortest_path_gpd = gpd.GeoDataFrame(
+        {"fid": links, "geometry": geom}
+    )
 
     """""  
     PLOTTING
