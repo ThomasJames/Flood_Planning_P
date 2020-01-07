@@ -30,6 +30,7 @@ from rasterio.enums import Resampling
 import rasterio.transform as transform
 from rasterio import windows
 from tkinter import *
+from tkinter import ttk
 
 
 class InputForm():
@@ -42,9 +43,10 @@ class InputForm():
             master.destroy()
 
         master = Tk()
-        # top = Frame()
-        lbl = Label(master, text=self.prompt)
-        lbl.pack()
+        style = ttk.Style()
+        style.configure("BW.TLabel", foreground="black", background="white")
+        w = Label(master, text="Please enter your position in Eastings and Northings")
+        w.pack()
         entry1 = Entry(master)
         entry2 = Entry(master)
         entry1.pack()
@@ -52,7 +54,7 @@ class InputForm():
         master.geometry("170x200+30+30")
         entry1.focus_set()
 
-        butt = Button(master, text="OK", width=10, command=ok)
+        butt = ttk.Button(master, text="RUN", width=10, command=ok, style="")
         butt.pack()
 
         mainloop()
@@ -173,20 +175,20 @@ if __name__ == "__main__":
     # row, col = background.index(x, y)
     # print(row, col)
 
-    # background_transform = background.transform
+    background_transform = background.transform
     bottom_left = background.transform * (0, 0)
     top_right = background.transform * (background.width, background.height)
-    print("top right", top_right)
-    print("bottom left", bottom_left)
+    # print("top_right", top_right)
+    # print("bottom left", bottom_left)
 
-    window_lower_lim = rasterio.transform.rowcol(bottom_left, x_window_lower, y_window_lower)
-    window_upper_lim = rasterio.transform.rowcol(top_right, x_window_higher, y_window_higher)
+    window_lower_lim = rasterio.transform.rowcol(background_transform, y_window_lower, x_window_lower)
+    window_upper_lim = rasterio.transform.rowcol(background_transform, y_window_higher, x_window_higher)
     print(window_lower_lim)
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
     # Read a window of data
-    slice_ = (slice(bottom_left), slice(top_right))
+    slice_ = (slice(window_upper_lim[0], window_lower_lim[0]), slice(window_lower_lim[1], window_upper_lim[1]))
     window_slice = windows.Window.from_slices(*slice_)
     print("window slice", window_slice)
     print("background raster info", background.height, background.width, background.transform, background.crs)
@@ -196,10 +198,12 @@ if __name__ == "__main__":
 
     window_map = background.read(1, window=window_slice)
     print("window map", window_map)
-    rasterio.plot.reshape_as_raster(window_map)
 
     palette = np.array([value for key, value in background.colormap(1).items()])
     island_raster_image = palette[window_map.astype(int)]
+    window_map_raster = rasterio.plot.reshape_as_raster(island_raster_image)
+
+    rasterio.plot.show(window_map_raster)
 
     # MAKE WINDOW AFTER BUFFER (LOOK UP)
     # RASTER WITH 10 KM WINDOW
@@ -495,7 +499,7 @@ if __name__ == "__main__":
     # PLot the line between the highest point and the last node
 
     # Plotting of the buffer zone
-    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.2)
+    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.2, zorder=0)
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
@@ -503,10 +507,15 @@ if __name__ == "__main__":
     # rasterio.plot.show(background, alpha=0.5, contour=False, zorder=1)
 
     fig, ax = plt.subplots(dpi=300)
+    ax.set_xlim([y_window_lower, y_window_higher])
+    ax.set_ylim([x_window_lower, x_window_higher])
+    rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
+    rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=2, alpha=0.5, cmap='inferno')
+    plt.show()
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
     # use the correct transforms
-
+    cmap =
     # Create the plot
     plt.show()
 
@@ -532,3 +541,4 @@ if __name__ == "__main__":
     # Return an answer if the user was on a bike or running
     # Return a value for the estimated number of steps the user will take
     # Returns some informatin about the weather conditions
+
