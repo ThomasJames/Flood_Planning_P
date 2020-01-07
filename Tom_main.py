@@ -308,8 +308,7 @@ if __name__ == "__main__":
     Therefore the time taken to travel each segment is 0.72 x the length of the segment 
     If the segment rises by more than 10 meters we can add a mintute 
     
-    We need to turn the weighting value in to a time value
-    
+    We need to turn the weighting value in to a time value    
     """""
 
     # Some test coordinates
@@ -326,7 +325,6 @@ if __name__ == "__main__":
     # (85110, 458898) - Disjointed.
     # (85810, 457190) = good
     # Shortest path test coordinate: (85800,  439619)
-    # Create the network
 
     # Populate a network with the edges and nodes
     network = nx.DiGraph()
@@ -419,13 +417,6 @@ if __name__ == "__main__":
     range, a north arrow, a scale bar, and a legend.
     To create a GeoDataFrame of the shortest path and then display it on top of a raster.
     We shall be using the following packages and the background map. 
-    import rasterio
-    import pyproj
-    import numpy as np
-    import geopandas as gpd
-    import matplotlib.pyplot as plt
-    import cartopy.crs as ccrs
-    from shapely.geometry import LineString  
     """""
 
     # Todo: Plotting check points:
@@ -498,22 +489,27 @@ if __name__ == "__main__":
     # Create a directory of raster files that correspond to the users coordinates, apply the relevant tile.
 
     """""
-    ADDITONAL IDEAS 
-    ---------------
+    USER OUTPUT (Additional feature) 
+    CALORIE COUNTER (Additional feature)
+    A calorie counter that takes the weight and height of the user and gives a calorie burnt output. 
+    A simple textfile as an output - To give the user some information about their journey. 
     """""
 
-    # OUTPUT FOR USER
-
+    # Loop to retrieve the lengths of every roadlink segment.
     lengths_of_shortest_path = []
     for i in range( len( path ) ):
         for link in road_links:
             if path[i] == road_links[link]["start"]:
                 lengths_of_shortest_path.append( road_links[link]["length"] )
+
+    # Calculate all the road lengths summed together
     total_distance_travelled = sum( lengths_of_shortest_path )
 
+    # Ask the user for their weight and height.
     if input( "key \"y\" if you Would like to know how many calories you will burn? " ) == "y":
         weight = int( input( "how much do you weigh in kg? :" ) )
         height = int( input( "How tall are you in meters? " ) )
+        # Calculate the calories burnt
         calories_burnt_per_second = (0.35 * weight) + ((1.38889 ** 2) / height) * (0.029) * weight
         travel_time_s = 0.72 * total_distance_travelled / 3600
         calories_burnt = round( travel_time_s * calories_burnt_per_second )
@@ -521,15 +517,20 @@ if __name__ == "__main__":
     else:
         print( "I guess you will just get fat then..." )
 
-    """""
-    USER OUTPUT 
-    """""
+    # Create a list of strings to be written to the fie
+    information_list = [
+        "Distance travelled (km): ",
+        str( round( total_distance_travelled ) / 1000 ),
+        "Length of journey (minutes): ",
+        str( round( travel_time_s ) ),
+        "Calories burnt: ",
+        str( calories_burnt )
+    ]
 
-    testList = [("Your location is: ", str( east ), str( north )), "text"]
-
-    outF = open( "myOutFile.txt", "w" )
-    for line in testList:
+    # Write the information output to a file. 
+    information_file = open( "Information_about_your_journey.txt", "w" )
+    for line in information_list:
         # write line to output file
-        outF.write( line )
-        outF.write( "\n" )
-    outF.close()
+        information_file.write( line )
+        information_file.write( "\n" )
+    information_file.close()
