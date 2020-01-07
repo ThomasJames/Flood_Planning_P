@@ -27,7 +27,10 @@ import json
 from rasterio.mask import mask
 from rasterio import mask
 from rasterio.enums import Resampling
+import rasterio.transform as transform
+from rasterio import windows
 from tkinter import *
+
 
 class InputForm():
     def __init__(self, prompt):
@@ -86,17 +89,13 @@ def color_path(g, path, color="blue"):
     return res
 
 
-# Function to obtain colours
-def obtain_colors(graph, default_node="blue", default_edge="black"):
-    node_colors = []
-    for node in graph.nodes:
-        node_colors.append(graph.nodes[node].get('color', default_node))
-    edge_colors = []
-    for u, v in graph.edges:
-        edge_colors.append(graph.edges[u, v].get('color', default_edge))
-    return node_colors, edge_colors
-
-
+# def create_window(point, raster_layer, buffer_distance=5000):
+#    row_offset, col_offset = raster_layer.index(west_bound, north_bound)
+#    row_opposite, col_opposite = raster_layer.index(east_bound, south_bound)
+#    width = col_opposite - col_offset
+#    height = row_opposite - row_offset
+#    window = Window(col_offset, row_offset, width, height)
+#    return window
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
 advising everyone to proceed by foot to the nearest high ground.
@@ -134,21 +133,21 @@ if __name__ == "__main__":
     elevation = rasterio.open('elevation/SZ.asc')
 
     # Import the background map
-    background = rasterio.open('background/raster-50k_2724246.tif')
+    background = rasterio.open("background/raster-50k_2724246.tif")
 
     # Upscaling raster to higher res
-    upscale_factor = 2
-
-    with background as dataset:
-
-        # resample data to target shape
-        data = dataset.read(
-            out_shape=(dataset.count, int(dataset.width * upscale_factor), int(dataset.height * upscale_factor)),
-            resampling=Resampling.bilinear)
-
-        # scale image transform
-        transform = dataset.transform * dataset.transform.scale(dataset.width / data.shape[-2]), (
-                    dataset.height / data.shape[-1])
+    # upscale_factor = 2
+    #
+    # with background as dataset:
+    #
+    #    # resample data to target shape
+    #    data = dataset.read(
+    #        out_shape=(dataset.count, int(dataset.width * upscale_factor), int(dataset.height * upscale_factor)),
+    #        resampling=Resampling.bilinear)
+    #
+    #    # scale image transform
+    #    transform = dataset.transform * dataset.transform.scale(dataset.width / data.shape[-2]), (
+    #                dataset.height / data.shape[-1])
 
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
@@ -167,6 +166,28 @@ if __name__ == "__main__":
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
+    # Read a window of data
+    slice_ = (slice(430000, 465000), slice(80000, 95000))
+    window_slice = windows.Window.from_slices(*slice_)
+    print("window slice", window_slice)
+    print("background raster info", background.height, background.width, background.transform, background.crs)
+
+    # Transform the window
+    transform_window = windows.transform(window_slice, background.transform)
+    window_map = background.read(1, window=window_slice)
+
+    rasterio.plot.reshape_as_raster(window_map)
+    # print(window_map)
+    # rasterio.plot.show(window_map)
+    #
+    # img = np.stack([background.read(4 - i, window=window_slice) for i in range(1, 4)], axis=-1)
+    # img = np.clip(img, 0, 2200) / 2200
+    #
+    # print(img.shape)
+    #
+    # plt.figure(figsize=(8,8))
+    # plot.show(img.transpose(2, 0, 1), transform=transform_window)
+
     # Create a 5km buffer
     buffer_zone = location.buffer(5000)
 
@@ -176,6 +197,11 @@ if __name__ == "__main__":
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple(plot_buffer.bounds)
 
+    ##################
+    # getting map in
+
+    ####################
+
     # Test is coordinate buffer zone is within bounding box
     if on_tile(buffer_zone, tile):
         print(" ")
@@ -183,7 +209,7 @@ if __name__ == "__main__":
         # The user is advised to quit the application
         print("You location is not in range, please close the application")
         # The code stops running
-        # sys.exit()
+        sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection(tile)
@@ -360,7 +386,7 @@ if __name__ == "__main__":
     shortest_path = color_path(g, path, "red")
 
     # Retrieve the nod coloutsd
-    node_colors, edge_colors = obtain_colors(shortest_path)
+    # node_colors, edge_colors = obtain_colors(shortest_path)
 
     links = []  # this list will be used to populate the feature id (fid) column
     geom = []  # this list will be used to populate the geometry column
@@ -406,6 +432,7 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
     shortest_path_gpd.plot(color="salmon", )
+
     plt.title("Isle of Wight Flood Plan")
     # y label
     plt.ylabel("Northings")
@@ -439,8 +466,22 @@ if __name__ == "__main__":
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show(elevation, alpha=1, contour=False, zorder=0)
-    rasterio.plot.show(background, alpha=0.5, contour=False, zorder=1)
+    # rasterio.plot.show(elevation, alpha=1, contour=False, zorder=0)
+    # rasterio.plot.show(background, alpha=0.5, contour=False, zorder=1)
+
+    # MAKE WINDOW AFTER BUFFER (LOOK UP)
+    # RASTER WITH 10 KM WINDOW
+    # TIFF AS NUMPY ARRAY WITH CORRECT DIMENSIONS
+    # WINDOW TRANSFORM
+    # APPLYING COLOUrMAP
+    palette = np.array([value for key, value in background.colormap(1).items()])
+    island_raster_image = palette[background_window.astype(int)]  # this will make sense when i've got a window sorted
+    # then, rasterio.plot.reshape_as_raster(island_raster_image)
+
+    fig, ax = plt.subplots(dpi=300)
+    # then put all of the rasterio plots on after this
+    # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
+    # use the correct transforms
 
     # Create the plot
     plt.show()
