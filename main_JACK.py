@@ -515,7 +515,7 @@ if __name__ == "__main__":
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
     # use the correct transforms
-    cmap =
+
     # Create the plot
     plt.show()
 
