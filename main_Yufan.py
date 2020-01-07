@@ -402,12 +402,6 @@ if __name__ == "__main__":
     # a 10km limit around the user
     # an automatically adjusting North arrow and scale bar
     # todo: Elevation side bar
-    # Plot out data with Matplotlib's 'contour'
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-
-    # plt.gca().set_aspect('equal', adjustable='box')
-
     # todo: A legend - Start / Highest / Shortest path
     # plt.legend()
 
@@ -422,11 +416,11 @@ if __name__ == "__main__":
     # 10km easting limit
     plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
     # North Arrow (x, y) to (x+dx, y+dy).
-    plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
-    plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N")
+    plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200, color="white")
+    plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N", color="white")
     # Scale bar (set to 5km)
-    plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
-    plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km")
+    plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0, color="white")
+    plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km", color="white")
     # User location
     plt.scatter(east, north, color="black", marker=11)
     # Plot the first node
@@ -438,6 +432,7 @@ if __name__ == "__main__":
     plt.contourf(elevation_array, cmap="viridis",
                  levels=list(range(0, 300, 10)))
     cbar = plt.colorbar()
+    plt.legend()
     # plt.imshow(background.read(1)
     # Open rasterio
     # background.colormap(1)
