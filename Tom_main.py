@@ -29,18 +29,9 @@ from rasterio import mask
 from rasterio.transform import xy, rowcol, from_bounds
 
 
-# Function to test if any object is within a polygon
-def on_tile(c, b):
-    try:
-        if b.contains( c ):
-            return True
-        else:
-            return False
-    except IOError:
-        print( "Unable to perform this operation" )
-
-
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
+# p_x must be a list of x coordinates
+# p_y must be a list of y coordinates
 def generate_coordinates(p_x, p_y):
     try:
         return list( map( lambda x, y: (x, y), p_x, p_y ) )
@@ -48,9 +39,56 @@ def generate_coordinates(p_x, p_y):
         print( "Unable to perform this operation" )
 
 
+# Function to test if any object is within a polygon
+# shapley_object can be any shapley object
+# Shaoe - Must be a shapley shape
+def is_point_or_shape_in_shape(shapley_object, shape):
+    try:
+        if shape.contains( shapley_object ):
+            return True
+        else:
+            return False
+    except IOError:
+        print( "Unable to perform this operation" )
+
+
+# Additional consideration - Function to ensure that all the roads are within the buffer zone.
+# Coordinate argument - Can be in (x, y) form
+# Buffer argument - Must be a shapely file.
+def is_link_inside_polygon(coordinate, buffer):
+    for coord_x_y in coordinate:
+        point = Point( coord_x_y )  # Convert to shapley point
+        if buffer.contains( point ):  # Test for
+            return True
+        else:
+            return False
+
+
+# Function to return adjustment time
+# coords - Must be the coordinates in [x, y]
+# elevation_array - Must be a numpy array containing the elevation data
+# transformation_matrix - The transformation matrix output.
+def elevation_adjustment(coords, elevation_array, transformation_matrix):
+    rise = 0
+    for i, point in enumerate( coords ):
+        x_coord, y_coord = point
+        if i == 0:
+            last_height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]
+        else:
+            height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]
+            if height > last_height:
+                rise += height - last_height
+            last_height = height
+    elevation_adjustment = rise / 10
+    return elevation_adjustment
+
+
 # Function to generate color path
-def color_path(g, path, color="blue"):
-    res = g.copy()
+# network - The network that contains the edges
+# path - the output path from the dijkstra_path
+# color - Built in default to blue
+def color_path(network, path, color="blue"):
+    res = network.copy()
     first = path[0]
     for node in path[1:]:
         res.edges[first, node]["color"] = color
@@ -59,6 +97,8 @@ def color_path(g, path, color="blue"):
 
 
 # Function to obtain colours
+# Graph to which you wish to obtain the colours
+# Default nodes and edges are assiggned within the function
 def obtain_colors(graph, default_node="blue", default_edge="black"):
     node_colors = []
     for node in graph.nodes:
@@ -96,14 +136,16 @@ if __name__ == "__main__":
     you can select a random point within 5km of the user.
     """""
 
-    # Import elevation map
+    # Import elevation map into a rasterio fule
     elevation = rasterio.open( 'elevation/SZ.asc' )
 
-    # Create elevation array
+    # Create elevation numpy array
     elevation_array = elevation.read( 1 )
 
     # Import the background map
     background = rasterio.open( "background/raster-50k_2724246.tif" )
+
+    # Create a background nuympy array
     background_array = background.read( 1 )
 
     # Ask the user for their location
@@ -126,16 +168,15 @@ if __name__ == "__main__":
     plot_buffer_bounds = tuple( plot_buffer.bounds )
 
     # Test is coordinate buffer zone is within bounding box
-    if on_tile(
+    if is_point_or_shape_in_shape(
             buffer_zone,
-            tile
-    ):
+            tile ):
         print( " " )
     else:
         # The user is advised to quit the application
         print( "You location is not in range, please close the application" )
         # The code stops running
-        # #sys.exit()
+        sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection( tile )
@@ -153,22 +194,19 @@ if __name__ == "__main__":
         northing_list.append( i )
     buffer_coordinates = generate_coordinates(
         easting_list,
-        northing_list
-    )
+        northing_list )
 
     # Warp the coordinates
-    roi_polygon_src_coords = warp.transform_geom(
+    warped_elevation_coordinates = warp.transform_geom(
         {'init': 'EPSG:27700'},
         elevation.crs,
         {"type": "Polygon",
-         "coordinates": [buffer_coordinates]}
-    )
+         "coordinates": [buffer_coordinates]} )
 
     # create an 3d array containing the elevation data masked to the buffer zone
     elevation_mask, out_transform = mask.mask( elevation,
-                                               [roi_polygon_src_coords],
-                                               crop=False
-                                               )
+                                               [warped_elevation_coordinates],
+                                               crop=False )
 
     # Search for the highest point in the buffer zone
     highest_point = np.amax( elevation_mask )
@@ -184,8 +222,7 @@ if __name__ == "__main__":
     highest_east, highest_north = rasterio.transform.xy( out_transform,
                                                          highest_east,
                                                          highest_north,
-                                                         offset='center'
-                                                         )
+                                                         offset='center' )
 
     # Create a 'shapley' point for the highest point
     highest_point_coordinates = Point( highest_east, highest_north )
@@ -215,7 +252,7 @@ if __name__ == "__main__":
     # construct an index with the default construction
     idx = index.Index()
 
-    # Insert the points into the index
+    # Populate the index with the points
     for i, p in enumerate( road_nodes_list ):
         idx.insert( i, p + p, p )
 
@@ -275,7 +312,6 @@ if __name__ == "__main__":
     
     """""
 
-
     # Some test coordinates
     # end to end
     # (85810, 439619) - Disjointed.
@@ -290,35 +326,7 @@ if __name__ == "__main__":
     # (85110, 458898) - Disjointed.
     # (85810, 457190) = good
     # Shortest path test coordinate: (85800,  439619)
-
     # Create the network
-
-    # Additional consideration - Function to ensure that all the roads are within the buffer zone
-    def is_link_inside_polygon(coordinate, buffer):
-        inside = True
-        for x_y in coordinate:
-            point_obj = Point( x_y )
-            if not buffer.contains( point_obj ):
-                inside = False
-                break
-        return inside
-
-
-    def elevation_adjustment(coords, heights_array, affine_transform):
-        total_climb = 0
-        for i, point in enumerate( coords ):
-            x, y = point
-            if i == 0:
-                last_height = heights_array[rowcol( affine_transform, x, y )]
-            else:
-                height = heights_array[rowcol( affine_transform, x, y )]
-                if height > last_height:
-                    total_climb += height - last_height
-
-                last_height = height
-        elevation_adjustment = total_climb / 10
-        return elevation_adjustment
-
 
     # Populate a network with the edges and nodes
     network = nx.DiGraph()
@@ -329,20 +337,18 @@ if __name__ == "__main__":
         # Exclude values that do not lie inside of the buffer zone
         if not is_link_inside_polygon(
                 road_coordinates,
-                buffer_zone
-        ):
+                buffer_zone ):
             continue
 
         # Calculate the basic travel time for a given road length
         basic_travel_time = road_length / 5000 * 60
 
-        # For forward movements across the road link
+        # For forward movements across the road link:
         # Adjust the data to take into account the elevation change
         adjusted_to_elevation = elevation_adjustment(
             road_coordinates,
             elevation_array,
-            out_transform  # Transformation matrix
-        )
+            out_transform )
 
         # Calculate the total time weight for forwards movement
         time_weight = basic_travel_time + adjusted_to_elevation
@@ -353,16 +359,14 @@ if __name__ == "__main__":
             road_links[link]['end'],
             fid=link,
             length=road_links[link]['length'],
-            time=time_weight
-        )
+            time=time_weight )
 
         # For backwards movement across the road link
         # Adjust the elevation for the elevation
         adjusted_to_elevation = elevation_adjustment(
             (reversed( road_coordinates )),  # Reversed to account for moving backwards across the roadlink
             elevation_array,
-            out_transform  # Transformation matrix
-        )
+            out_transform )
 
         # Calculate the total time weight for backwards movement
         time_weight = basic_travel_time + adjusted_to_elevation
@@ -373,23 +377,20 @@ if __name__ == "__main__":
             road_links[link]['start'],
             fid=link,
             length=road_links[link]['length'],
-            time=time_weight
-        )
+            time=time_weight )
 
     # Identify the shortest path using dijkstra_path function
     path = nx.dijkstra_path(
         network,
         source=first_node_id,
         target=last_node_id,
-        weight='time'
-    )
+        weight='time' )
 
     # assign the path the colour red
     shortest_path = color_path(
         network,
         path,
-        "red"
-    )
+        "red" )
 
     # Retrieve the node colours
     node_colors, edge_colors = obtain_colors( shortest_path )
@@ -406,9 +407,7 @@ if __name__ == "__main__":
         first_node = node
 
     # Create Geopandas shortest path for plotting
-    shortest_path_gpd = gpd.GeoDataFrame(
-        {"fid": links, "geometry": geom}
-    )
+    shortest_path_gpd = gpd.GeoDataFrame( {"fid": links, "geometry": geom} )
 
     """""  
     PLOTTING
@@ -503,15 +502,34 @@ if __name__ == "__main__":
     ---------------
     """""
 
-    # Let the user know they are in the water, and plot it as a danger zone
-    # Simple GUI to ask the user if they are walking / running / cycling
-    # Return an answer if the user was on a bike or running
-    # Return a value for the estimated number of steps the user will take
-    # Returns some informatin about the weather conditions
-    # Calorie Counter
-    # Output text file
+    # OUTPUT FOR USER
 
-    print( "There is flooding in your area, you need to travel to The coordinates of your location are ", east, north,
-           ", You need to travel to", highest_east, highest_north,
-           "This location has a linear distance of ", (location.distance( highest_point_coordinates ) / 1000),
-           "in meters" )
+    lengths_of_shortest_path = []
+    for i in range( len( path ) ):
+        for link in road_links:
+            if path[i] == road_links[link]["start"]:
+                lengths_of_shortest_path.append( road_links[link]["length"] )
+    total_distance_travelled = sum( lengths_of_shortest_path )
+
+    if input( "key \"y\" if you Would like to know how many calories you will burn? " ) == "y":
+        weight = int( input( "how much do you weigh in kg? :" ) )
+        height = int( input( "How tall are you in meters? " ) )
+        calories_burnt_per_second = (0.35 * weight) + ((1.38889 ** 2) / height) * (0.029) * weight
+        travel_time_s = 0.72 * total_distance_travelled / 3600
+        calories_burnt = round( travel_time_s * calories_burnt_per_second )
+        print( "You will burn ", calories_burnt, "calories" )
+    else:
+        print( "I guess you will just get fat then..." )
+
+    """""
+    USER OUTPUT 
+    """""
+
+    testList = [("Your location is: ", str( east ), str( north )), "text"]
+
+    outF = open( "myOutFile.txt", "w" )
+    for line in testList:
+        # write line to output file
+        outF.write( line )
+        outF.write( "\n" )
+    outF.close()
