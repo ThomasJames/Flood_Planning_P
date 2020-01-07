@@ -128,14 +128,13 @@ if __name__ == "__main__":
     # Test is coordinate buffer zone is within bounding box
     if on_tile(
             buffer_zone,
-            tile
-    ):
+            tile ):
         print( " " )
     else:
         # The user is advised to quit the application
         print( "You location is not in range, please close the application" )
         # The code stops running
-        # #sys.exit()
+        sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection( tile )
@@ -153,22 +152,19 @@ if __name__ == "__main__":
         northing_list.append( i )
     buffer_coordinates = generate_coordinates(
         easting_list,
-        northing_list
-    )
+        northing_list )
 
     # Warp the coordinates
     roi_polygon_src_coords = warp.transform_geom(
         {'init': 'EPSG:27700'},
         elevation.crs,
         {"type": "Polygon",
-         "coordinates": [buffer_coordinates]}
-    )
+         "coordinates": [buffer_coordinates]} )
 
     # create an 3d array containing the elevation data masked to the buffer zone
     elevation_mask, out_transform = mask.mask( elevation,
                                                [roi_polygon_src_coords],
-                                               crop=False
-                                               )
+                                               crop=False )
 
     # Search for the highest point in the buffer zone
     highest_point = np.amax( elevation_mask )
@@ -184,8 +180,7 @@ if __name__ == "__main__":
     highest_east, highest_north = rasterio.transform.xy( out_transform,
                                                          highest_east,
                                                          highest_north,
-                                                         offset='center'
-                                                         )
+                                                         offset='center' )
 
     # Create a 'shapley' point for the highest point
     highest_point_coordinates = Point( highest_east, highest_north )
@@ -329,8 +324,7 @@ if __name__ == "__main__":
         # Exclude values that do not lie inside of the buffer zone
         if not is_link_inside_polygon(
                 road_coordinates,
-                buffer_zone
-        ):
+                buffer_zone ):
             continue
 
         # Calculate the basic travel time for a given road length
@@ -341,8 +335,7 @@ if __name__ == "__main__":
         adjusted_to_elevation = elevation_adjustment(
             road_coordinates,
             elevation_array,
-            out_transform  # Transformation matrix
-        )
+            out_transform )
 
         # Calculate the total time weight for forwards movement
         time_weight = basic_travel_time + adjusted_to_elevation
@@ -353,16 +346,14 @@ if __name__ == "__main__":
             road_links[link]['end'],
             fid=link,
             length=road_links[link]['length'],
-            time=time_weight
-        )
+            time=time_weight )
 
         # For backwards movement across the road link
         # Adjust the elevation for the elevation
         adjusted_to_elevation = elevation_adjustment(
             (reversed( road_coordinates )),  # Reversed to account for moving backwards across the roadlink
             elevation_array,
-            out_transform  # Transformation matrix
-        )
+            out_transform )
 
         # Calculate the total time weight for backwards movement
         time_weight = basic_travel_time + adjusted_to_elevation
@@ -373,23 +364,20 @@ if __name__ == "__main__":
             road_links[link]['start'],
             fid=link,
             length=road_links[link]['length'],
-            time=time_weight
-        )
+            time=time_weight )
 
     # Identify the shortest path using dijkstra_path function
     path = nx.dijkstra_path(
         network,
         source=first_node_id,
         target=last_node_id,
-        weight='time'
-    )
+        weight='time' )
 
     # assign the path the colour red
     shortest_path = color_path(
         network,
         path,
-        "red"
-    )
+        "red" )
 
     # Retrieve the node colours
     node_colors, edge_colors = obtain_colors( shortest_path )
@@ -407,8 +395,7 @@ if __name__ == "__main__":
 
     # Create Geopandas shortest path for plotting
     shortest_path_gpd = gpd.GeoDataFrame(
-        {"fid": links, "geometry": geom}
-    )
+        {"fid": links, "geometry": geom} )
 
     """""  
     PLOTTING
