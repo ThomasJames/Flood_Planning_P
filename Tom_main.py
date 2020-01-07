@@ -121,7 +121,7 @@ if __name__ == "__main__":
     buffer_zone = location.buffer( 5000 )
 
     # Create a 10km buffer for plotting purposes
-    plot_buffer = location.buffer( 10000 )
+    plot_buffer = location.buffer( 5000 )
 
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple( plot_buffer.bounds )
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         # The user is advised to quit the application
         print( "You location is not in range, please close the application" )
         # The code stops running
-        sys.exit()
+        # #sys.exit()
 
     # Create an intersect polygon with the tile
     intersection_shape = buffer_zone.intersection( tile )
@@ -264,7 +264,6 @@ if __name__ == "__main__":
     
     We need to turn the weighting value in to a time value
     
-
     """""
 
     # Some test coordinates
@@ -329,7 +328,9 @@ if __name__ == "__main__":
         else:
             elevation_weighting.append( 0 )
 
-    # Create a list of link lengths
+    print( elevation_weighting )
+
+    # Create a list of link lengths, adjusted for time.
     link_lengths = []
     for i in road_index:
         link_lengths.append( road_links[i]["length"] * (3600 / 5000) )
@@ -343,6 +344,7 @@ if __name__ == "__main__":
 
     # Create an empty network
     g = nx.Graph()
+
 
     # Populate the network with edges, state the weighting for each edge
     for link in road_links:
@@ -428,6 +430,14 @@ if __name__ == "__main__":
     # highest point
     plt.scatter( finish_node[0], finish_node[1], color="white", marker="x" )
 
+    # plt.imshow(background.read(1)
+    # Open rasterio
+    # background.colormap(1)
+    # put the colour scheme on the array
+    # Plot the array
+    # Value for key, value in background.colormap(1).items()
+    # background)image = palette[back_array]
+    # ax.imshow()
     # PLot the line between the user location and the and first node
 
     # PLot the line between the highest point and the last node
