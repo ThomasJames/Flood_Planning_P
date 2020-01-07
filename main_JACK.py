@@ -135,6 +135,7 @@ if __name__ == "__main__":
     # Import the background map
     background = rasterio.open("background/raster-50k_2724246.tif")
 
+
     # Upscaling raster to higher res
     # upscale_factor = 2
     #
@@ -163,20 +164,52 @@ if __name__ == "__main__":
         print("Please swim to shore and start again")
         sys.exit()
 
+    x_window_lower = (east - 5000)
+    x_window_higher = (east + 5000)
+    y_window_lower = (north - 5000)
+    y_window_higher = (north + 5000)
+
+    # x, y = (background.bounds.left, background.bounds.top)
+    # row, col = background.index(x, y)
+    # print(row, col)
+
+    # background_transform = background.transform
+    bottom_left = background.transform * (0, 0)
+    top_right = background.transform * (background.width, background.height)
+    print("top right", top_right)
+    print("bottom left", bottom_left)
+
+    window_lower_lim = rasterio.transform.rowcol(bottom_left, x_window_lower, y_window_lower)
+    window_upper_lim = rasterio.transform.rowcol(top_right, x_window_higher, y_window_higher)
+    print(window_lower_lim)
     # create a to spec bounding box "tile"
     tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
     # Read a window of data
-    slice_ = (slice(430000, 465000), slice(80000, 95000))
+    slice_ = (slice(bottom_left), slice(top_right))
     window_slice = windows.Window.from_slices(*slice_)
     print("window slice", window_slice)
     print("background raster info", background.height, background.width, background.transform, background.crs)
 
     # Transform the window
     transform_window = windows.transform(window_slice, background.transform)
-    window_map = background.read(1, window=window_slice)
 
+    window_map = background.read(1, window=window_slice)
+    print("window map", window_map)
     rasterio.plot.reshape_as_raster(window_map)
+
+    palette = np.array([value for key, value in background.colormap(1).items()])
+    island_raster_image = palette[window_map.astype(int)]
+
+    # MAKE WINDOW AFTER BUFFER (LOOK UP)
+    # RASTER WITH 10 KM WINDOW
+    # TIFF AS NUMPY ARRAY WITH CORRECT DIMENSIONS
+    # WINDOW TRANSFORM
+    # APPLYING COLOUrMAP
+
+    # this will make sense when i've got a window sorted
+    # then, rasterio.plot.reshape_as_raster(island_raster_image)
+
     # print(window_map)
     # rasterio.plot.show(window_map)
     #
@@ -468,15 +501,6 @@ if __name__ == "__main__":
     # Plotting of the elevation
     # rasterio.plot.show(elevation, alpha=1, contour=False, zorder=0)
     # rasterio.plot.show(background, alpha=0.5, contour=False, zorder=1)
-
-    # MAKE WINDOW AFTER BUFFER (LOOK UP)
-    # RASTER WITH 10 KM WINDOW
-    # TIFF AS NUMPY ARRAY WITH CORRECT DIMENSIONS
-    # WINDOW TRANSFORM
-    # APPLYING COLOUrMAP
-    palette = np.array([value for key, value in background.colormap(1).items()])
-    island_raster_image = palette[background_window.astype(int)]  # this will make sense when i've got a window sorted
-    # then, rasterio.plot.reshape_as_raster(island_raster_image)
 
     fig, ax = plt.subplots(dpi=300)
     # then put all of the rasterio plots on after this
