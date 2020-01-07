@@ -138,7 +138,6 @@ if __name__ == "__main__":
     If the input coor- dinate is outside this box, inform the user and quit the application. This is done because 
     the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and the input point
     must be at least 5km from the edge of this raster.
-
     HIGHEST POINT IDENTIFICATION    
     ----------------------------  
     Identify the highest point within a 5km radius from the user location.
@@ -162,7 +161,7 @@ if __name__ == "__main__":
 
     # Ask the user for their location
     print( "Please input your location" )
-    north, east = int( input( "east: " ) ), int( input( "north: " ) )
+    north, east = int( input( "north: " ) ), int( input( "east: " ) )
 
     # Create a buffer zone of 5km
     location = Point( east, north )
@@ -246,7 +245,6 @@ if __name__ == "__main__":
     point identified in the previous step. To successfully complete this task you could use r-trees.
     Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
     to the highest point.
-
     """""
 
     # Load the ITN network
@@ -311,11 +309,11 @@ if __name__ == "__main__":
     you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
     (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
-    
+
     Every 0.72 seconds, we travel 1 meter 
     Therefore the time taken to travel each segment is 0.72 x the length of the segment 
     If the segment rises by more than 10 meters we can add a mintute 
-    
+
     We need to turn the weighting value in to a time value    
     """""
 
