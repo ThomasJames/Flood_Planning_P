@@ -238,6 +238,24 @@ if __name__ == "__main__":
     # Create a 'shapley' point for the highest point
     highest_point_coordinates = Point( highest_east, highest_north )
 
+    # Get dimensions of the entire raster
+    raster_pixel_xy_max = (elevation_array.shape[0], elevation_array.shape[1])
+
+    # Get the bounding box of the raster file:
+    # raster_xmin, raster_ymin = rasterio.transform.xy( out_transform,
+    #                                                   0,
+    #                                                   0,
+    #                                                   offset='center' )
+    # raster_xmax, raster_ymax = rasterio.transform.xy( out_transform,
+    #                                                   raster_pixel_xy_max[0],
+    #                                                   raster_pixel_xy_max[1],
+    #                                                   offset='center' )
+    #
+    # raster_bounding_box = Polygon[(raster_xmin, raster_ymin), \
+    #                       (raster_xmin, raster_ymax), \
+    #                       (raster_xmax, raster_ymax),\
+    #                       (raster_xmax, raster_ymin)]
+
     """""  
     IDENTIFY THE NETWORK
     --------------------
@@ -440,7 +458,7 @@ if __name__ == "__main__":
     # y label
     plt.ylabel( "Northings" )
     # x label
-    plt.xlabel( "Eastings" )
+    # plt.xlabel( "Eastings" )
     # 10km northings limit
     plt.ylim( (plot_buffer_bounds[1], plot_buffer_bounds[3]) )
     # 10km easting limit
@@ -475,9 +493,11 @@ if __name__ == "__main__":
     # Plotting of the buffer zone
     plt.fill( x_bi, y_bi, color="skyblue", alpha=0.2 )
 
+
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
     rasterio.plot.show( elevation, alpha=1, contour=False )
+
 
     # Create the plot
     plt.show()
@@ -488,11 +508,6 @@ if __name__ == "__main__":
     The position of the user is restricted to a region in where the user must be more than 5km from the edge of the 
     elevation raster. Write additional code to overcome this limitation.   
     """""
-
-    # Potential Solutions:
-    # Create a function that generates a bounding box that adjusts to the limits of the existing raster.
-    # If the user is outside the region, tell them.
-    # Create a directory of raster files that correspond to the users coordinates, apply the relevant tile.
 
     """""
     USER OUTPUT (Additional feature) 
@@ -540,3 +555,8 @@ if __name__ == "__main__":
         information_file.write( line )
         information_file.write( "\n" )
     information_file.close()
+
+    # Todo: plot - Elevation side bar, north arrow, scalebar,
+    # Todo:
+    # Todo: Connect the GUI
+    #
