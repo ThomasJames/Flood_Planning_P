@@ -106,9 +106,6 @@ if __name__ == "__main__":
     background = rasterio.open( "background/raster-50k_2724246.tif" )
     background_array = background.read( 1 )
 
-    # Import the isle_of_wight shape
-    island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
-
     # Ask the user for their location
     print( "Please input your location" )
     north, east = int( input( "east: " ) ), int( input( "north: " ) )
@@ -129,7 +126,10 @@ if __name__ == "__main__":
     plot_buffer_bounds = tuple( plot_buffer.bounds )
 
     # Test is coordinate buffer zone is within bounding box
-    if on_tile( buffer_zone, tile ):
+    if on_tile(
+            buffer_zone,
+            tile
+    ):
         print( " " )
     else:
         # The user is advised to quit the application
@@ -151,18 +151,24 @@ if __name__ == "__main__":
         easting_list.append( i )
     for i in highest_north:
         northing_list.append( i )
-    buffer_coordinates = generate_coordinates( easting_list, northing_list )
+    buffer_coordinates = generate_coordinates(
+        easting_list,
+        northing_list
+    )
 
     # Warp the coordinates
-    roi_polygon_src_coords = warp.transform_geom( {'init': 'EPSG:27700'},
-                                                  elevation.crs,
-                                                  {"type": "Polygon",
-                                                   "coordinates": [buffer_coordinates]} )
+    roi_polygon_src_coords = warp.transform_geom(
+        {'init': 'EPSG:27700'},
+        elevation.crs,
+        {"type": "Polygon",
+         "coordinates": [buffer_coordinates]}
+    )
 
     # create an 3d array containing the elevation data masked to the buffer zone
     elevation_mask, out_transform = mask.mask( elevation,
                                                [roi_polygon_src_coords],
-                                               crop=False )
+                                               crop=False
+                                               )
 
     # Search for the highest point in the buffer zone
     highest_point = np.amax( elevation_mask )
@@ -178,7 +184,8 @@ if __name__ == "__main__":
     highest_east, highest_north = rasterio.transform.xy( out_transform,
                                                          highest_east,
                                                          highest_north,
-                                                         offset='center' )
+                                                         offset='center'
+                                                         )
 
     # Create a 'shapley' point for the highest point
     highest_point_coordinates = Point( highest_east, highest_north )
@@ -320,40 +327,53 @@ if __name__ == "__main__":
         road_coordinates = road_links[link]['coords']
 
         # Exclude values that do not lie inside of the buffer zone
-        if not is_link_inside_polygon( road_coordinates, buffer_zone ):
+        if not is_link_inside_polygon(
+                road_coordinates,
+                buffer_zone
+        ):
             continue
 
         # Calculate the basic travel time for a given road length
-        basic_travel_time = road_length / (5000) * 60
+        basic_travel_time = road_length / 5000 * 60
 
         # For forward movements across the road link
-        # Adjust the data to to accomidate the elvation change
-        adjusted_to_elevation = elevation_adjustment( road_coordinates, elevation_array, out_transform )
+        # Adjust the data to take into account the elevation change
+        adjusted_to_elevation = elevation_adjustment(
+            road_coordinates,
+            elevation_array,
+            out_transform  # Transformation matrix
+        )
 
-        total_time = basic_travel_time + adjusted_to_elevation
+        # Calculate the total time weight for forwards movement
+        time_weight = basic_travel_time + adjusted_to_elevation
+
+        # Populate the network with the forwards weighted edges
         network.add_edge(
             road_links[link]['start'],
             road_links[link]['end'],
             fid=link,
             length=road_links[link]['length'],
-            time=total_time
+            time=time_weight
         )
 
         # For backwards movement across the road link
-        # Adjust the data for
+        # Adjust the elevation for the elevation
         adjusted_to_elevation = elevation_adjustment(
             (reversed( road_coordinates )),  # Reversed to account for moving backwards across the roadlink
             elevation_array,
-            out_transform
+            out_transform  # Transformation matrix
         )
 
-        total_time = basic_travel_time + adjusted_to_elevation
+        # Calculate the total time weight for backwards movement
+        time_weight = basic_travel_time + adjusted_to_elevation
+
+        # Populate the network with the backwards weighted edges
         network.add_edge(
             road_links[link]['end'],
             road_links[link]['start'],
             fid=link,
             length=road_links[link]['length'],
-            time=total_time
+            time=time_weight
         )
 
     # Identify the shortest path using dijkstra_path function
