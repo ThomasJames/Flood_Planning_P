@@ -32,32 +32,44 @@ from rasterio import windows
 from tkinter import *
 from tkinter import ttk
 
+class MyWindow:
+    def __init__(self, win):
+        self.lbl1 = Label(win, text='Easting')
+        self.lbl2 = Label(win, text='Northing')
+        self.t1 = Entry(bd=3)
+        self.t2 = Entry()
+        self.btn1 = Button(win, text='Run "Higher Ground" Protocol')
+        self.lbl1.place(x=100, y=50)
+        self.t1.place(x=200, y=50)
+        self.lbl2.place(x=100, y=100)
+        self.t2.place(x=200, y=100)
+        self.b1 = Button(win, text='Run "Higher Ground" Protocol', command=self.add)
+        # self.b2.bind('<Button-1>', self.sub)
+        self.b1.place(x=100, y=150)
 
-class InputForm():
-    def __init__(self, prompt):
-        self.prompt = prompt
-        self.response = ""
-
-        def ok():
-            self.response = entry1.get(), entry2.get()
-            master.destroy()
-
+    def add(self):
+        # self.response = self.t1.get(), self.t2.get()
+        east1 = self.t1.get()
+        north1 = self.t2.get()
         master = Tk()
-        style = ttk.Style()
-        style.configure("BW.TLabel", foreground="black", background="white")
-        w = Label(master, text="Please enter your position in Eastings and Northings")
-        w.pack()
-        entry1 = Entry(master)
-        entry2 = Entry(master)
-        entry1.pack()
-        entry2.pack()
-        master.geometry("170x200+30+30")
-        entry1.focus_set()
+        master.destroy()
+        # self.t3.delete(0, 'end')
+        # num1=int(self.t1.get())
+        # num2=int(self.t2.get())
+        # result=num1+num2
+        # self.t3.insert(END, str(result))
+        print(east1, north1)
 
-        butt = ttk.Button(master, text="RUN", width=10, command=ok, style="")
-        butt.pack()
 
-        mainloop()
+#       def ok():
+#           self.response = entry1.get(), entry2.get()
+
+
+window = Tk()
+mywin = MyWindow(window)
+window.title('Flood Protection Program')
+window.geometry("400x300+10+10")
+window.mainloop()
 
 
 # The above class structure was found here: https://stackoverflow.com/questions/51832502/returning-a-value-from-a-tkinter-form
@@ -125,11 +137,11 @@ if __name__ == "__main__":
     you can select a random point within 5km of the user.
     """""
 
-    input_points = InputForm("Enter position").response
-
-    print("Your coordinates are:", input_points)
-    east = (int(input_points[0]))
-    north = (int(input_points[1]))
+    # input_points = InputForm("Enter position").response
+    #
+    # print("Your coordinates are:", input_points)
+    # east = (int(input_points[0]))
+    # north = (int(input_points[1]))
 
     # Import elevation map
     elevation = rasterio.open('elevation/SZ.asc')
@@ -137,26 +149,15 @@ if __name__ == "__main__":
     # Import the background map
     background = rasterio.open("background/raster-50k_2724246.tif")
 
-
-    # Upscaling raster to higher res
-    # upscale_factor = 2
-    #
-    # with background as dataset:
-    #
-    #    # resample data to target shape
-    #    data = dataset.read(
-    #        out_shape=(dataset.count, int(dataset.width * upscale_factor), int(dataset.height * upscale_factor)),
-    #        resampling=Resampling.bilinear)
-    #
-    #    # scale image transform
-    #    transform = dataset.transform * dataset.transform.scale(dataset.width / data.shape[-2]), (
-    #                dataset.height / data.shape[-1])
-
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
 
+    # call class to get easting and northing
+    easting = MyWindow.add(east1)
+
     # Create a buffer zone of 5km
-    location = Point(north, east)
+    print(easting)
+    # location = Point(north, east)
 
     # Is user on island
     user_on_land = (island_shapefile.contains(location))
@@ -515,7 +516,7 @@ if __name__ == "__main__":
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
     # use the correct transforms
-    cmap =
+    # cmap =
     # Create the plot
     plt.show()
 
@@ -541,4 +542,3 @@ if __name__ == "__main__":
     # Return an answer if the user was on a bike or running
     # Return a value for the estimated number of steps the user will take
     # Returns some informatin about the weather conditions
-
