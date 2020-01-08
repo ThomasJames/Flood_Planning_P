@@ -43,10 +43,10 @@ def on_tile(c, b):
 
 # Function to test if any object is within a polygon
 # shapley_object can be any shapley object
-# Shaoe - Must be a shapley shape
+# Shape - Must be a shapley shape
 def is_point_or_shape_in_shape(shapley_object, shape):
     try:
-        if shape.contains(shapley_object):  # Test if onject within shape
+        if shape.contains(shapley_object):  # Test if object within shape
             return True
         else:
             return False
@@ -55,6 +55,8 @@ def is_point_or_shape_in_shape(shapley_object, shape):
 
 
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
+# p_x: a list of x coordinates
+# p_y: a list of y coordinates
 def generate_coordinates(p_x, p_y):
     try:
         return list(map(lambda x, y: (x, y), p_x, p_y))
@@ -62,9 +64,49 @@ def generate_coordinates(p_x, p_y):
         print("Unable to perform this operation")
 
 
+# Additional consideration - Function to ensure that all the roads are within the buffer zone.
+# Coordinate argument - Can be in (x, y) form
+# Buffer argument - Must be a shapely file.
+def is_link_inside_polygon(coordinate, buffer):
+    try:
+        for coord_x_y in coordinate:
+            point = Point(coord_x_y)  # Convert to shapley point
+            if buffer.contains(point):  # Test if the road nodes are within the buffer zone
+                return True
+            else:
+                return False
+    except IOError:
+        print("Unable to perform this operation")
+
+
+# Function to return adjustment time
+# coords - Must be the coordinates in [x, y]
+# elevation_array - Must be a numpy array containing the elevation data
+# transformation_matrix - The transformation matrix output.
+def elevation_adjustment(coords, elevation_array, transformation_matrix):
+    rise = 0  # Initialise rise to zero
+    try:
+        for i, point in enumerate(coords):  # Extract coordinates
+            x_coord, y_coord = point
+            if i == 0:  # First value
+                back_height = elevation_array[rowcol(transformation_matrix, x_coord, y_coord)]  # Get elevation
+            else:
+                fore_height = elevation_array[rowcol(transformation_matrix, x_coord, y_coord)]  # Get elevation
+                if fore_height > back_height:  # Ignore negative elevation changes
+                    rise += fore_height - back_height  # Add each posotive changes to the rise
+                back_height = fore_height
+        elevation_adjustment = rise / 10  # To get the adjustment value in minutes.
+        return elevation_adjustment
+    except IOError:
+        print("Unable to perform this operation")
+
+
 # Function to generate color path
-def color_path(g, path, color="blue"):
-    res = g.copy()
+# network - The network that contains the edges
+# path - the output path from the dijkstra_path
+# color - Built in default to blue
+def color_path(network, path, color="blue"):
+    res = network.copy()
     first = path[0]
     for node in path[1:]:
         res.edges[first, node]["color"] = color
