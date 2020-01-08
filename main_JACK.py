@@ -32,7 +32,7 @@ from rasterio import windows
 from tkinter import *
 from tkinter import ttk
 
-class MyWindow:
+"""class MyWindow:
     def __init__(self, win):
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
@@ -69,7 +69,7 @@ window = Tk()
 mywin = MyWindow(window)
 window.title('Flood Protection Program')
 window.geometry("400x300+10+10")
-window.mainloop()
+window.mainloop()"""
 
 
 # The above class structure was found here: https://stackoverflow.com/questions/51832502/returning-a-value-from-a-tkinter-form
@@ -138,10 +138,13 @@ if __name__ == "__main__":
     """""
 
     # input_points = InputForm("Enter position").response
-    #
+
     # print("Your coordinates are:", input_points)
     # east = (int(input_points[0]))
     # north = (int(input_points[1]))
+
+    east = int(input("enter Northing:"))
+    north = int(input("Enter Easting: "))
 
     # Import elevation map
     elevation = rasterio.open('elevation/SZ.asc')
@@ -153,11 +156,11 @@ if __name__ == "__main__":
     island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
 
     # call class to get easting and northing
-    easting = MyWindow.add(east1)
+    # easting = MyWindow.add(east1)
 
     # Create a buffer zone of 5km
-    print(easting)
-    # location = Point(north, east)
+    # print(easting)
+    location = Point(north, east)
 
     # Is user on island
     user_on_land = (island_shapefile.contains(location))
@@ -508,10 +511,15 @@ if __name__ == "__main__":
     # rasterio.plot.show(background, alpha=0.5, contour=False, zorder=1)
 
     fig, ax = plt.subplots(dpi=300)
+    img = ax.imshow(elevation_mask[0, :, :])
+    fig.colorbar(img, ax=ax)
     ax.set_xlim([y_window_lower, y_window_higher])
     ax.set_ylim([x_window_lower, x_window_higher])
     rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
     rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=2, alpha=0.5, cmap='inferno')
+    # ax.contourf(elevation)
+    # plt.colorbar()
+
     plt.show()
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
