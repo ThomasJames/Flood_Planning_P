@@ -1,8 +1,8 @@
 import numpy as np
 import sys
 import pandas as pd
-from pyproj import CRS
-from pyproj import Transformer
+# from pyproj import CRS
+# from pyproj import Transformer
 import shapely
 from rtree.index import Index
 from shapely import geometry
@@ -259,14 +259,12 @@ if __name__ == "__main__":
         print( " " )
     else:
         print( "You aren't in the specified bounding box please wait..." )
-
-    if input( "click \"y\"Would you like to extend the region? " ) == "y":
-        if is_point_or_shape_in_shape( elevation_raster_buffer_intersect, elevation_raster_box ):
-            print( "Succesfully extended the region" )
-
-    else:
-        "You location is not in range"
-        sys.exit()
+        if input( "click \"y\" if you Would you like to extend the region? " ) == "y":
+            if is_point_or_shape_in_shape( elevation_raster_buffer_intersect, elevation_raster_box ):
+                print( "Region has been extended the region" )
+            else:
+                "You location is not in range"
+                sys.exit()
 
     """""  
     PREPARE FOR PLOTTING 
