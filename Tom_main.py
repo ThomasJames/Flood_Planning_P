@@ -288,8 +288,6 @@ if __name__ == "__main__":
     EXTENDING THE REGION
     """""
 
-    print( np.pad( elevation_array, (east, north), mode='constant' ) )
-
     """""  
     IDENTIFY THE NETWORK
     --------------------
