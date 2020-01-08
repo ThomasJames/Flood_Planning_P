@@ -189,86 +189,95 @@ of the quickest route that they should take to walk to the highest point of land
 if __name__ == "__main__":
 
     """""  
-    USER INPUT 
-    ----------
-    The application should ask the user to input their current location as a British National Grid coordinate
-    (easting and northing). Then, it should test whether the user is within a box (430000, 80000) and (465000, 95000).
-    If the input coor- dinate is outside this box, inform the user and quit the application. This is done because 
-    the elevation raster provided to you extends only from (425000, 75000) to (470000, 100000) and the input point
-    must be at least 5km from the edge of this raster.
-
-    HIGHEST POINT IDENTIFICATION    
-    ----------------------------  
-    Identify the highest point within a 5km radius from the user location.
-    To successfully complete this task you could (1) use the window function in rasterio to limit the size of your
-    elevation array. If you do not use this window you may experience memory issues; or, (2) use a rasterised 5km buffer
-    to clip an elevation array. Other solutions are also accepted. Moreover, if you are not capable to solve this task
-    you can select a random point within 5km of the user.
+    IMPORTING AN MANIPULATION OF DATA 
     """""
 
-    # input_points = InputForm("Enter position").response
-
-    # print("Your coordinates are:", input_points)
-    # east = (int(input_points[0]))
-    # north = (int(input_points[1]))
-
-    # east = int(input("enter Northing:"))
-    # north = int(input("Enter Easting: "))
-
-    # Import elevation map
-    elevation = rasterio.open('elevation/SZ.asc')
-
-    # Create elevation numpy array
-    elevation_array = elevation.read(1)
-
     # Import the background map
-    background = rasterio.open("background/raster-50k_2724246.tif")
+    background = rasterio.open( "background/raster-50k_2724246.tif" )
 
     # Create a background nuympy array
-    background_array = background.read(1)
-
-    # Ask the user for their location
-    print("Please input your location")
-    east, north = int(input("north: ")), int(input("east: "))
+    background_array = background.read( 1 )
 
     # Import the isle_of_wight shape
-    island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
+    island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
 
-    # call class to get easting and northing
-    # easting = MyWindow.add(east1)
+    # Import elevation map
+    elevation = rasterio.open( 'elevation/SZ.asc' )
+    
+    # Retrieve the coordinates of the elevation box
+    elevation_box_xy = elevation.bounds
+    elevation_raster_box = box( *list( elevation.bounds ) )
+    elevation_box_x, elevation_box_y = elevation_raster_box.exterior.xy
 
-    # Create a buffer zone of 5km
-    # print(easting)
-    location = Point(north, east)
+    # Append the x and y values to lists to be used in buffer box function
+    e_x = []
+    e_y = []
+    for i in elevation_box_x:
+        e_x.append( i )
+    for i in elevation_box_y:
+        e_y.append( i )
 
-    # Is user on island
-    user_on_land = (island_shapefile.contains(location))
+    # Create the buffer box file by calling the create buffer box function
+    buffer_box = Polygon( create_buffer_box( 5000, e_x, e_y ) )
+
+    # Create elevation numpy array
+    elevation_array = elevation.read( 1 )
+
+    """""  
+    RETRIEVE AND MANIPULATE THE USER INPUT   
+    """""
+
+    # Request the user location
+    print( "Please input your location" )
+    east, north = int( input( "north: " ) ), int( input( "east: " ) )
+
+    # Create a shapley point
+    location = Point( north, east )
+
+    buffer_zone = location.buffer( 5000 )
+
+    # Create a 10km buffer for plotting purposes
+    plot_buffer = location.buffer( 10000 )
+
+    # Get the bounds for the 10km limits
+    plot_buffer_bounds = tuple( plot_buffer.bounds )
+
+    # Create
+    elevation_raster_box.intersection( buffer_zone )
+
+    # Check if user is on island
+    user_on_land = (island_shapefile.contains( location ))
     if user_on_land[0] == True:
-        print("User is on land")
+        print( "User is on land" )
     else:
-        print("Please swim to shore and start again")
-        sys.exit()
-    #######################################################
+        print( "Swim to shore" )
+
+    # Test is coordinate within buffer zone is within the sepcified bounding box
+    if is_point_or_shape_in_shape(
+            buffer_zone,
+            buffer_box ):
+        print( " " )
+    else:
+
+    if input( "click \"y\"Would you like to extend the region? " ):
+
+    """""  
+    PREPARE FOR PLOTTING 
+    """""
+
+    # Create window bounds
     x_window_lower = (east - 5000)
     x_window_higher = (east + 5000)
     y_window_lower = (north - 5000)
     y_window_higher = (north + 5000)
 
-    # x, y = (background.bounds.left, background.bounds.top)
-    # row, col = background.index(x, y)
-    # print(row, col)
-
     background_transform = background.transform
     bottom_left = background.transform * (0, 0)
     top_right = background.transform * (background.width, background.height)
-    # print("top_right", top_right)
-    # print("bottom left", bottom_left)
 
     window_lower_lim = rasterio.transform.rowcol(background_transform, y_window_lower, x_window_lower)
     window_upper_lim = rasterio.transform.rowcol(background_transform, y_window_higher, x_window_higher)
     print(window_lower_lim)
-    # create a to spec bounding box "tile"
-    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
 
     # Read a window of data
     slice_ = (slice(window_upper_lim[0], window_lower_lim[0]), slice(window_lower_lim[1], window_upper_lim[1]))
@@ -287,51 +296,15 @@ if __name__ == "__main__":
     window_map_raster = rasterio.plot.reshape_as_raster(island_raster_image)
 
     rasterio.plot.show(window_map_raster)
-    ####################################################################################################
-    elevation_box_xy = elevation.bounds
-    elevation_raster_box = box(*list(elevation.bounds))
-    elevation_box_x, elevation_box_y = elevation_raster_box.exterior.xy
-    print(elevation_box_x)
-    print(elevation_box_y)
 
-    # Append the x and y values to lists to be used in buffer box function
-    e_x = []
-    e_y = []
-    for i in elevation_box_x:
-        e_x.append(i)
-    for i in elevation_box_y:
-        e_y.append(i)
 
-    # Create the buffer box file by calling the create buffer box function
-    print(create_buffer_box(5000, e_x, e_y))
-    buffer_box = Polygon(create_buffer_box(5000, e_x, e_y))
 
-    print(buffer_box)
 
-    buffer_zone = location.buffer(5000)
 
-    # Create a 10km buffer for plotting purposes
-    plot_buffer = location.buffer(10000)
 
-    # Get the bounds for the 10km limits
-    plot_buffer_bounds = tuple(plot_buffer.bounds)
 
-    # Test is coordinate buffer zone is within bounding box
-    if is_point_or_shape_in_shape(
-            buffer_zone,
-            buffer_box):
-        print(" ")
-    else:
-        # The user is advised to quit the application
-        print("You location is not in range, please close the application")
-        # The code stops running
-        sys.exit()
 
-    # Create an intersect polygon with the tile
-    intersection_shape = buffer_zone.intersection(tile)
 
-    # Get the buffer zone/ intersection coordinates
-    x_bi, y_bi = intersection_shape.exterior.xy
 
     # Create coordinate list to allow for iteration
     highest_east, highest_north = buffer_zone.exterior.xy
