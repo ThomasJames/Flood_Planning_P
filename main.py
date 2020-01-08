@@ -1,8 +1,8 @@
 import numpy as np
 import sys
 import pandas as pd
-# from pyproj import CRS
-# from pyproj import Transformer
+from pyproj import CRS
+from pyproj import Transformer
 import shapely
 from rtree.index import Index
 from shapely import geometry
@@ -407,8 +407,9 @@ if __name__ == "__main__":
     for i, p in enumerate(road_nodes_list):
         idx.insert(i, p + p, p)
 
+    #####################north an east swapped############################
     # The query start point is the user location:
-    query_start = (east, north)
+    query_start = (north, east)
 
     # The query finish point is the highest point
     query_finish = (highest_east, highest_north)
@@ -544,9 +545,11 @@ if __name__ == "__main__":
 
     # Create Geopandas shortest path for plotting
     shortest_path_gpd = gpd.GeoDataFrame({"fid": links, "geometry": geom})
+    # head = shortest_path_gpd.head()
+    # print(head, "heaad")
 
     """""
-    PLOTTING
+    PLOTTING                                           
     --------
     Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey
     raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
@@ -625,9 +628,9 @@ if __name__ == "__main__":
     # fig.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
     ax.set_xlim([y_window_lower, y_window_higher])
     ax.set_ylim([x_window_lower, x_window_higher])
-    rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
-    rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=2, alpha=0.5, cmap=cmap, vmin=0.01)
-
+    # rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
+    # rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=2, alpha=0.5, cmap=cmap, vmin=0.01)
+    shortest_path_gpd.plot(ax=ax, edgecolor='black', linewidth=0.7, linestyle='dashed', zorder=6)
     plt.show()
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
