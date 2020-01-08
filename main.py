@@ -623,14 +623,14 @@ if __name__ == "__main__":
     cmap.set_under('r', alpha=0)
 
     fig, ax = plt.subplots(dpi=300)
-    elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno')
+    elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno', zorder=2)
     fig.colorbar(elevation_plot, ax=ax)
     # fig.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
     ax.set_xlim([y_window_lower, y_window_higher])
     ax.set_ylim([x_window_lower, x_window_higher])
-    # rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
-    # rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=2, alpha=0.5, cmap=cmap, vmin=0.01)
-    shortest_path_gpd.plot(ax=ax, edgecolor='black', linewidth=0.7, linestyle='dashed', zorder=6)
+    rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
+    rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=5, alpha=0.5, cmap=cmap, vmin=0.01)
+    shortest_path_gpd.plot(ax=ax, edgecolor='black', linewidth=5, zorder=10)
     plt.show()
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
@@ -646,18 +646,48 @@ if __name__ == "__main__":
     elevation raster. Write additional code to overcome this limitation.
     """""
 
-    # Potential Solutions:
-    # Create a function that generates a bounding box that adjusts to the limits of the existing raster.
-    # If the user is outside the region, tell them.
-    # Create a directory of raster files that correspond to the users coordinates, apply the relevant tile.
-
     """""
-    ADDITONAL IDEAS
-    ---------------
-    """""
+        USER OUTPUT (Additional feature) 
+        CALORIE COUNTER (Additional feature)
+        A calorie counter that takes the weight and height of the user and gives a calorie burnt output. 
+        A simple textfile as an output - To give the user some information about their journey. 
+        """""
 
-    # Let the user know they are in the water, and plot it as a danger zone
-    # Simple GUI to ask the user if they are walking / running / cycling
-    # Return an answer if the user was on a bike or running
-    # Return a value for the estimated number of steps the user will take
-    # Returns some informatin about the weather conditions
+    # Loop to retrieve the lengths of every roadlink segment.
+    lengths_of_shortest_path = []
+    for i in range(len(path)):
+        for link in road_links:
+            if path[i] == road_links[link]["start"]:
+                lengths_of_shortest_path.append(road_links[link]["length"])
+
+    # Calculate all the road lengths summed together
+    total_distance_travelled = sum(lengths_of_shortest_path)
+
+    # Ask the user for their weight and height.
+    if input("key \"y\" if you Would like to know how many calories you will burn? ") == "y":
+        weight = int(input("how much do you weigh in kg? :"))
+        height = int(input("How tall are you in meters? "))
+        # Calculate the calories burnt
+        calories_burnt_per_second = (0.35 * weight) + ((1.38889 ** 2) / height) * (0.029) * weight
+        travel_time_s = 0.72 * total_distance_travelled / 3600
+        calories_burnt = round(travel_time_s * calories_burnt_per_second)
+        print("You will burn ", calories_burnt, "calories")
+    else:
+        print("I guess you will just get fat then...")
+
+    # Create a list of strings to be written to the fie
+    information_list = [
+        "Distance travelled (km): ",
+        str(round(total_distance_travelled) / 1000),
+        "Length of journey (minutes): ",
+        str(round(travel_time_s)),
+        "Calories burnt: ",
+        str(calories_burnt)]
+
+    # Write the information output to a file.
+    information_file = open("Information_about_your_journey.txt", "w")
+    for line in information_list:
+        # write line to output file
+        information_file.write(line)
+        information_file.write("\n")
+    information_file.close()
