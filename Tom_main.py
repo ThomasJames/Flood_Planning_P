@@ -134,62 +134,6 @@ def create_buffer_box(buffer, x, y):
          (x[0] - buffer, y[0] - buffer)]
 
 
-# def extend_region(array, x_coord, y_coord, transform):
-#
-#     pix_x, pix_y = rasterio.transform.rowcol( transform, x_coord, y_coord )
-#     print( pix_x )
-#     print( pix_y )
-#
-#     x_a = array.shape[0]
-#     y_a = array.shape[1]
-#
-#     over = 0
-#     if pix_x > x_a:
-#         over += pix_x - x_a
-#         if pix_x < 0:
-#             over += abs(pix_y)
-#             if pix_y > y_a:
-#                 over += pix_y - y_a
-#                 if pix_y < 0:
-#                     over += abs(pix_y)
-#
-#     else:
-#         print("on the raster")
-#     print(over)
-#     out_array = np.pad( array, over, mode='constant' )
-#     return out_array
-
-def moving_window(arr, size, pad_num):
-    x, y = arr.shape
-    for j in range( x ):
-        for i in range( y ):
-            l = i - size
-            if l < 0:
-                lp = l * -1
-                l = 0
-            else:
-                lp = 0
-            r = i + size
-            if r > y - 1:
-                rp = r - y + 1
-                r = y - 1
-            else:
-                rp = 0
-            t = j - size
-            if t < 0:
-                tp = t * -1
-                t = 0
-            else:
-                tp = 0
-            b = j + size
-            if b > x - 1:
-                bp = b - x + 1
-                b = x - 1
-            else:
-                bp = 0
-            yield np.pad( arr[l:r, t:b], ((lp, rp), (tp, bp)), 'constant', constant_values=(pad_num) )
-
-
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
 advising everyone to proceed by foot to the nearest high ground.
@@ -231,33 +175,9 @@ if __name__ == "__main__":
     # Create a background nuympy array
     background_array = background.read( 1 )
 
-    # Ask the user for their location
-    print( "Please input your location" )
-    north, east = int( input( "north: " ) ), int( input( "east: " ) )
-
-    # Create a buffer zone of 5km
-    location = Point( east, north )
-    location_list_coords = [east, north]
-
-    # # Get window dimensions for the point
-    # left, right = east - 5000, east + 5000
-    # bottom, top = north - 5000, north + 5000
-    #
-    # # Create a window
-    # row_offset, col_offset = elevation.index( left, top )
-    # row_op, col_op = elevation.index( right, bottom )
-    # window_height = row_op - row_offset
-    # window_width = col_op - row_offset
-    # buffer_window = Window( col_offset, row_offset, window_width, window_height )
-    #
-    # heights_array = elevation.read( 1, window=buffer_window )
-    # print( heights_array )
-
     elevation_box_xy = elevation.bounds
     elevation_raster_box = box( *list( elevation.bounds ) )
     elevation_box_x, elevation_box_y = elevation_raster_box.exterior.xy
-    print( elevation_box_x )
-    print( elevation_box_y )
 
     # Append the x and y values to lists to be used in buffer box function
     e_x = []
@@ -268,13 +188,20 @@ if __name__ == "__main__":
         e_y.append( i )
 
     # Create the buffer box file by calling the create buffer box function
-    print( create_buffer_box( 5000, e_x, e_y ) )
     buffer_box = Polygon( create_buffer_box( 5000, e_x, e_y ) )
 
-    print( buffer_box )
+    # Ask the user for their location
+    print( "Please input your location" )
+    north, east = int( input( "north: " ) ), int( input( "east: " ) )
+
+    # Create a buffer zone of 5km
+    location = Point( east, north )
+    location_list_coords = [east, north]
 
     # Create a 5km buffer
     buffer_zone = location.buffer( 5000 )
+
+    raster_buffer_interection = elevation_raster_box.intersection( buffer_zone )
 
     # Create a 10km buffer for plotting purposes
     plot_buffer = location.buffer( 5000 )
@@ -291,6 +218,7 @@ if __name__ == "__main__":
         # The user is advised to quit the application
         print( "You location is not in range, please close the application" )
 
+    if is_point_or_shape_in_shape( buffer_zone, raster_buffer_interection ):
 
     # Get the buffer zone/ intersection coordinates
     x_bi, y_bi = buffer_zone.exterior.xy
@@ -635,8 +563,7 @@ if __name__ == "__main__":
         "Length of journey (minutes): ",
         str( round( travel_time_s ) ),
         "Calories burnt: ",
-        str( calories_burnt )
-    ]
+        str( calories_burnt )]
 
     # Write the information output to a file.
     information_file = open( "Information_about_your_journey.txt", "w" )

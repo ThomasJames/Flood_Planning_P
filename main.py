@@ -261,7 +261,7 @@ if __name__ == "__main__":
         print( "You aren't in the specified bounding box please wait..." )
         if input( "click \"y\" if you Would you like to extend the region? " ) == "y":
             if is_point_or_shape_in_shape( elevation_raster_buffer_intersect, elevation_raster_box ):
-                print( "Region has been extended the region" )
+                print( "Region has been extended" )
             else:
                 "You location is not in range"
                 sys.exit()
