@@ -484,7 +484,7 @@ if __name__ == "__main__":
     # 10km easting limit
     plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
     # North Arrow (x, y) to (x+dx, y+dy).
-    plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
+
     plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N")
     # Scale bar (set to 5km)
     plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
@@ -510,15 +510,21 @@ if __name__ == "__main__":
     # rasterio.plot.show(elevation, alpha=1, contour=False, zorder=0)
     # rasterio.plot.show(background, alpha=0.5, contour=False, zorder=1)
 
+    # fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    # axs[0].imshow(elevation_mask)
+
+    # custom paint job
+    cmap = plt.get_cmap('inferno')
+    cmap.set_under('r', alpha=0)
+
     fig, ax = plt.subplots(dpi=300)
-    img = ax.imshow(elevation_mask[0, :, :])
-    fig.colorbar(img, ax=ax)
+    elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno')
+    fig.colorbar(elevation_plot, ax=ax)
+    # fig.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
     ax.set_xlim([y_window_lower, y_window_higher])
     ax.set_ylim([x_window_lower, x_window_higher])
     rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
-    rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=2, alpha=0.5, cmap='inferno')
-    # ax.contourf(elevation)
-    # plt.colorbar()
+    rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=2, alpha=0.5, cmap=cmap, vmin=0.01)
 
     plt.show()
     # then put all of the rasterio plots on after this
