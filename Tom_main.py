@@ -1,12 +1,12 @@
 import numpy as np
 import sys
 import pandas as pd
-from pyproj import CRS
-from pyproj import Transformer
+# from pyproj import CRS
+# from pyproj import Transformer
 import shapely
 from rtree.index import Index
 from shapely import geometry
-from shapely.geometry import Point
+from shapely.geometry import Point, box
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
 import matplotlib.pyplot as plt
@@ -121,6 +121,18 @@ def obtain_colors(graph, default_node="blue", default_edge="black"):
         print( "Unable to perform this operation" )
 
 
+# Function to create a smaller interior box given a buffer area
+# buffer argument takes the buffer range yo would like to create
+# x is a list of x values
+# y is a list of y values
+def create_buffer_box(buffer, x, y):
+    return \
+        [(x[2] + buffer, y[0] + buffer),
+         (x[2] + buffer, y[1] - buffer),
+         (x[0] - buffer, y[1] + buffer),
+         (x[0] - buffer, y[0] - buffer)]
+
+
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
 advising everyone to proceed by foot to the nearest high ground.
@@ -166,8 +178,25 @@ if __name__ == "__main__":
     # Create a buffer zone of 5km
     location = Point( east, north )
 
-    # create a to spec bounding box "tile"
-    tile = Polygon( [(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)] )
+    elevation_box_xy = elevation.bounds
+    elevation_raster_box = box( *list( elevation.bounds ) )
+    elevation_box_x, elevation_box_y = elevation_raster_box.exterior.xy
+    print( elevation_box_x )
+    print( elevation_box_y )
+
+    # Append the x and y values to lists to be used in buffer box function
+    e_x = []
+    e_y = []
+    for i in elevation_box_x:
+        e_x.append( i )
+    for i in elevation_box_y:
+        e_y.append( i )
+
+    # Create the buffer box file by calling the create buffer box function
+    print( create_buffer_box( 5000, e_x, e_y ) )
+    buffer_box = Polygon( create_buffer_box( 5000, e_x, e_y ) )
+
+    print( buffer_box )
 
     # Create a 5km buffer
     buffer_zone = location.buffer( 5000 )
@@ -181,7 +210,7 @@ if __name__ == "__main__":
     # Test is coordinate buffer zone is within bounding box
     if is_point_or_shape_in_shape(
             buffer_zone,
-            tile ):
+            buffer_box ):
         print( " " )
     else:
         # The user is advised to quit the application
@@ -190,7 +219,7 @@ if __name__ == "__main__":
         sys.exit()
 
     # Create an intersect polygon with the tile
-    intersection_shape = buffer_zone.intersection( tile )
+    intersection_shape = buffer_zone.intersection( buffer_box )
 
     # Get the buffer zone/ intersection coordinates
     x_bi, y_bi = intersection_shape.exterior.xy
@@ -240,21 +269,6 @@ if __name__ == "__main__":
 
     # Get dimensions of the entire raster
     raster_pixel_xy_max = (elevation_array.shape[0], elevation_array.shape[1])
-
-    # Get the bounding box of the raster file:
-    # raster_xmin, raster_ymin = rasterio.transform.xy( out_transform,
-    #                                                   0,
-    #                                                   0,
-    #                                                   offset='center' )
-    # raster_xmax, raster_ymax = rasterio.transform.xy( out_transform,
-    #                                                   raster_pixel_xy_max[0],
-    #                                                   raster_pixel_xy_max[1],
-    #                                                   offset='center' )
-    #
-    # raster_bounding_box = Polygon[(raster_xmin, raster_ymin), \
-    #                       (raster_xmin, raster_ymax), \
-    #                       (raster_xmax, raster_ymax),\
-    #                       (raster_xmax, raster_ymin)]
 
     """""  
     IDENTIFY THE NETWORK
@@ -327,11 +341,9 @@ if __name__ == "__main__":
     you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
     (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
     inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
-
     Every 0.72 seconds, we travel 1 meter 
     Therefore the time taken to travel each segment is 0.72 x the length of the segment 
     If the segment rises by more than 10 meters we can add a mintute 
-
     We need to turn the weighting value in to a time value    
     """""
 
@@ -555,8 +567,3 @@ if __name__ == "__main__":
         information_file.write( line )
         information_file.write( "\n" )
     information_file.close()
-
-    # Todo: plot - Elevation side bar, north arrow, scalebar,
-    # Todo:
-    # Todo: Connect the GUI
-    #
