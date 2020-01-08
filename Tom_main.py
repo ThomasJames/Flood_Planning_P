@@ -10,6 +10,7 @@ from shapely.geometry import Point, box
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
 import matplotlib.pyplot as plt
+import rasterio.crs
 from pyproj import Geod
 import geopandas as gpd
 import rasterio
@@ -44,7 +45,7 @@ def generate_coordinates(p_x, p_y):
 # Shaoe - Must be a shapley shape
 def is_point_or_shape_in_shape(shapley_object, shape):
     try:
-        if shape.contains( shapley_object ):
+        if shape.contains( shapley_object ):  # Test if onject within shape
             return True
         else:
             return False
@@ -72,18 +73,18 @@ def is_link_inside_polygon(coordinate, buffer):
 # elevation_array - Must be a numpy array containing the elevation data
 # transformation_matrix - The transformation matrix output.
 def elevation_adjustment(coords, elevation_array, transformation_matrix):
-    rise = 0
+    rise = 0  # Initialise rise to zero
     try:
-        for i, point in enumerate( coords ):
+        for i, point in enumerate( coords ):  # Extract coordinates
             x_coord, y_coord = point
-            if i == 0:
-                back_height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]
+            if i == 0:  # First value
+                back_height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]  # Get elevation
             else:
-                fore_height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]
-                if fore_height > back_height:
-                    rise += fore_height - back_height
+                fore_height = elevation_array[rowcol( transformation_matrix, x_coord, y_coord )]  # Get elevation
+                if fore_height > back_height:  # Ignore negative elevation changes
+                    rise += fore_height - back_height  # Add each posotive changes to the rise
                 back_height = fore_height
-        elevation_adjustment = rise / 10
+        elevation_adjustment = rise / 10  # To get the adjustment value in minutes.
         return elevation_adjustment
     except IOError:
         print( "Unable to perform this operation" )
@@ -107,7 +108,7 @@ def color_path(network, path, color="blue"):
 
 # Function to obtain colours
 # Graph to which you wish to obtain the colours
-# Default nodes and edges are assiggned within the function
+# Default nodes and edges are assigment within the function
 def obtain_colors(graph, default_node="blue", default_edge="black"):
     try:
         node_colors = []
@@ -162,6 +163,9 @@ if __name__ == "__main__":
     # Import elevation map into a rasterio fule
     elevation = rasterio.open( 'elevation/SZ.asc' )
 
+    # rasterio.transform used to extract the resolution
+    raster_resolution = elevation.transform[0]
+
     # Create elevation numpy array
     elevation_array = elevation.read( 1 )
 
@@ -177,6 +181,20 @@ if __name__ == "__main__":
 
     # Create a buffer zone of 5km
     location = Point( east, north )
+
+    # Get window dimensions for the point
+    left, right = east - 5000, east + 5000
+    bottom, top = north - 5000, north + 5000
+
+    # Create a window
+    row_offset, col_offset = elevation.index( left, top )
+    row_op, col_op = elevation.index( right, bottom )
+    window_height = row_op - row_offset
+    window_width = col_op - row_offset
+    buffer_window = Window( col_offset, row_offset, window_width, window_height )
+
+    heights_array = elevation.read( 1, window=buffer_window )
+    print( heights_array )
 
     elevation_box_xy = elevation.bounds
     elevation_raster_box = box( *list( elevation.bounds ) )
@@ -215,14 +233,10 @@ if __name__ == "__main__":
     else:
         # The user is advised to quit the application
         print( "You location is not in range, please close the application" )
-        # The code stops running
-        sys.exit()
 
-    # Create an intersect polygon with the tile
-    intersection_shape = buffer_zone.intersection( buffer_box )
 
     # Get the buffer zone/ intersection coordinates
-    x_bi, y_bi = intersection_shape.exterior.xy
+    x_bi, y_bi = buffer_zone.exterior.xy
 
     # Create coordinate list to allow for iteration
     highest_east, highest_north = buffer_zone.exterior.xy
@@ -269,6 +283,12 @@ if __name__ == "__main__":
 
     # Get dimensions of the entire raster
     raster_pixel_xy_max = (elevation_array.shape[0], elevation_array.shape[1])
+
+    """""
+    EXTENDING THE REGION
+    """""
+
+    print( np.pad( elevation_array, (east, north), mode='constant' ) )
 
     """""  
     IDENTIFY THE NETWORK
@@ -421,10 +441,7 @@ if __name__ == "__main__":
         weight='time' )
 
     # assign the path the colour red
-    shortest_path = color_path(
-        network,
-        path,
-        "red" )
+    shortest_path = color_path( network, path, "red" )
 
     # Retrieve the node colours
     node_colors, edge_colors = obtain_colors( shortest_path )
