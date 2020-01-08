@@ -134,6 +134,37 @@ def create_buffer_box(buffer, x, y):
          (x[0] - buffer, y[0] - buffer)]
 
 
+def extend_region(array, x_coord, y_coord, transform):
+    pix_x, pix_y = rasterio.transform.rowcol( transform, x_coord, y_coord )
+    print( pix_x )
+    print( pix_y )
+
+    x_a = array.shape[0]
+    y_a = array.shape[1]
+
+    if pix_x > x_a:
+        over = pix_x - x_a
+        array_out = np.pad( array, [(0, 0), (0, over)], mode='constant' )  # Pad 0's to the right of the array
+        return array_out
+    elif pix_x < 0:
+        over = abs( pix_x )
+        array_out = np.pad( array, [(over, 0), (0, 0)], mode='constant' )  # Pad 0's to the left of the array
+        return array_out
+    else:
+        print( "The x value is in in line with the raster " )
+
+    if pix_x > y_a:
+        over = pix_x - y_a
+        array_out = np.pad( array, [(0, 0), (0, over)], mode='constant' )  # Pad 0's to the right of the array
+        return array_out
+    elif pix_x < 0:
+        over = abs( pix_x )
+        array_out = np.pad( array, [(over, 0), (0, 0)], mode='constant' )  # Pad 0's to the left of the array
+        return array_out
+    else:
+        print( "The y value is in in line with the raster " )
+
+
 """""
 Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
 advising everyone to proceed by foot to the nearest high ground.
@@ -181,20 +212,21 @@ if __name__ == "__main__":
 
     # Create a buffer zone of 5km
     location = Point( east, north )
+    location_list_coords = [east, north]
 
-    # Get window dimensions for the point
-    left, right = east - 5000, east + 5000
-    bottom, top = north - 5000, north + 5000
-
-    # Create a window
-    row_offset, col_offset = elevation.index( left, top )
-    row_op, col_op = elevation.index( right, bottom )
-    window_height = row_op - row_offset
-    window_width = col_op - row_offset
-    buffer_window = Window( col_offset, row_offset, window_width, window_height )
-
-    heights_array = elevation.read( 1, window=buffer_window )
-    print( heights_array )
+    # # Get window dimensions for the point
+    # left, right = east - 5000, east + 5000
+    # bottom, top = north - 5000, north + 5000
+    #
+    # # Create a window
+    # row_offset, col_offset = elevation.index( left, top )
+    # row_op, col_op = elevation.index( right, bottom )
+    # window_height = row_op - row_offset
+    # window_width = col_op - row_offset
+    # buffer_window = Window( col_offset, row_offset, window_width, window_height )
+    #
+    # heights_array = elevation.read( 1, window=buffer_window )
+    # print( heights_array )
 
     elevation_box_xy = elevation.bounds
     elevation_raster_box = box( *list( elevation.bounds ) )
@@ -288,6 +320,9 @@ if __name__ == "__main__":
     EXTENDING THE REGION
     """""
 
+    extended = (extend_region( elevation_array, east, north, out_transform ))
+    print( extended.shape )
+
     """""  
     IDENTIFY THE NETWORK
     --------------------
@@ -368,7 +403,7 @@ if __name__ == "__main__":
     # Some test coordinates
     # end to end
     # (85810, 439619) - Disjointed.
-    # (85110, 450619  - Disjointed.
+    # (439619, 450619  - Disjointed.
     # (85810, 457190) - good
     # (90000, 450000) - Disjointed
     # (90000, 430000) - Good
@@ -378,6 +413,8 @@ if __name__ == "__main__":
     # (90000, 450619) - Good
     # (85110, 458898) - Disjointed.
     # (85810, 457190) = good
+
+    # 105810, 439619
     # Shortest path test coordinate: (85800,  439619)
 
     # Populate a network with the edges and nodes
