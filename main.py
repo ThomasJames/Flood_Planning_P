@@ -518,7 +518,6 @@ if __name__ == "__main__":
     # Create Geopandas shortest path for plotting
     shortest_path_gpd = gpd.GeoDataFrame( {"fid": links,
                                            "geometry": geom} )
-
     """""
     PLOTTING                                           
     --------
@@ -535,30 +534,6 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
     # shortest_path_gpd.plot(color="salmon", )
-
-    plt.title("Isle of Wight Flood Plan")
-    # y label
-    plt.ylabel("Northings")
-    # x label
-    plt.xlabel("Eastings")
-    # 10km northings limit
-    plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
-    # 10km easting limit
-    plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
-    # North Arrow (x, y) to (x+dx, y+dy).
-
-    plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N")
-    # Scale bar (set to 5km)
-    plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
-    plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km")
-    # User location
-    plt.scatter(east, north, color="black", marker=11)
-    # Plot the first node
-    plt.scatter(start_node[0], start_node[1], color="black", marker="x")
-    # Nearest node to user
-    plt.scatter(highest_east, highest_north, color="white", marker=11)
-    # highest point
-    plt.scatter(finish_node[0], finish_node[1], color="white", marker="x")
 
     # PLot the line between the user location and the and first node
 
@@ -582,18 +557,46 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(dpi=300)
     elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno', zorder=2)
     fig.colorbar(elevation_plot, ax=ax)
-    # fig.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
+
     ax.set_xlim([y_window_lower, y_window_higher])
     ax.set_ylim([x_window_lower, x_window_higher])
     rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
     rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=5, alpha=0.5, cmap=cmap, vmin=0.01)
     shortest_path_gpd.plot(ax=ax, edgecolor='black', linewidth=5, zorder=10)
-    plt.show()
+
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
     # use the correct transforms
     # cmap =
     # Create the plot
+
+    plt.title("Isle of Wight Flood Plan")
+    # y label
+    plt.ylabel("Northings")
+    # x label
+    plt.xlabel("Eastings")
+    # 10km northings limit
+    plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
+    # 10km easting limit
+    plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
+    # North Arrow (x, y) to (x+dx, y+dy).
+
+    plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N", zorder=10)
+    # Scale bar (set to 5km)
+    plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
+
+    plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
+    
+    plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km")
+    # User location
+    plt.scatter(east, north, color="black", marker=11)
+    # Plot the first node
+    plt.scatter(start_node[0], start_node[1], color="black", marker="x")
+    # Nearest node to user
+    plt.scatter(highest_east, highest_north, color="white", marker=11)
+    # highest point
+    plt.scatter(finish_node[0], finish_node[1], color="white", marker="x")
+
     plt.show()
 
     """""
