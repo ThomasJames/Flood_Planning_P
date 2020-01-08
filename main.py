@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
     # Import elevation map
     elevation = rasterio.open( 'elevation/SZ.asc' )
-    
+
     # Retrieve the coordinates of the elevation box
     elevation_box_xy = elevation.bounds
     elevation_raster_box = box( *list( elevation.bounds ) )
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     plot_buffer_bounds = tuple( plot_buffer.bounds )
 
     # Create
-    elevation_raster_box.intersection( buffer_zone )
+    elevation_raster_buffer_intersect = elevation_raster_box.intersection( buffer_zone )
 
     # Check if user is on island
     user_on_land = (island_shapefile.contains( location ))
@@ -258,8 +258,15 @@ if __name__ == "__main__":
             buffer_box ):
         print( " " )
     else:
+        print( "You aren't in the specified bounding box please wait..." )
 
-    if input( "click \"y\"Would you like to extend the region? " ):
+    if input( "click \"y\"Would you like to extend the region? " ) == "y":
+        if is_point_or_shape_in_shape( elevation_raster_buffer_intersect, elevation_raster_box ):
+            print( "Succesfully extended the region" )
+
+    else:
+        "You location is not in range"
+        sys.exit()
 
     """""  
     PREPARE FOR PLOTTING 
@@ -275,36 +282,37 @@ if __name__ == "__main__":
     bottom_left = background.transform * (0, 0)
     top_right = background.transform * (background.width, background.height)
 
-    window_lower_lim = rasterio.transform.rowcol(background_transform, y_window_lower, x_window_lower)
-    window_upper_lim = rasterio.transform.rowcol(background_transform, y_window_higher, x_window_higher)
-    print(window_lower_lim)
+    # Transform the lower limit
+    window_lower_lim = rasterio.transform.rowcol( background_transform,
+                                                  y_window_lower,
+                                                  x_window_lower )
+
+    # Transform the upper limit
+    window_upper_lim = rasterio.transform.rowcol( background_transform,
+                                                  y_window_higher,
+                                                  x_window_higher )
 
     # Read a window of data
-    slice_ = (slice(window_upper_lim[0], window_lower_lim[0]), slice(window_lower_lim[1], window_upper_lim[1]))
-    window_slice = windows.Window.from_slices(*slice_)
-    print("window slice", window_slice)
-    print("background raster info", background.height, background.width, background.transform, background.crs)
+    slice_ = (slice( window_upper_lim[0],
+                     window_lower_lim[0] ),
+              slice( window_lower_lim[1],
+                     window_upper_lim[1] ))
+
+    window_slice = windows.Window.from_slices( *slice_ )
 
     # Transform the window
-    transform_window = windows.transform(window_slice, background.transform)
+    transform_window = windows.transform( window_slice,
+                                          background.transform )
 
-    window_map = background.read(1, window=window_slice)
-    print("window map", window_map)
+    window_map = background.read( 1, window=window_slice )
 
-    palette = np.array([value for key, value in background.colormap(1).items()])
-    island_raster_image = palette[window_map.astype(int)]
-    window_map_raster = rasterio.plot.reshape_as_raster(island_raster_image)
+    palette = np.array( [value for key, value in background.colormap( 1 ).items()] )
 
-    rasterio.plot.show(window_map_raster)
+    island_raster_image = palette[window_map.astype( int )]
 
+    window_map_raster = rasterio.plot.reshape_as_raster( island_raster_image )
 
-
-
-
-
-
-
-
+    rasterio.plot.show( window_map_raster )
 
     # Create coordinate list to allow for iteration
     highest_east, highest_north = buffer_zone.exterior.xy
@@ -333,7 +341,7 @@ if __name__ == "__main__":
     # Search for the highest point in the buffer zone
     highest_point = np.amax(elevation_mask)
 
-    # Extract the indicies of the highest point in pixel coordinates
+    # Extract the index of the highest point in pixel coordinates
     z, highest_east, highest_north = np.where(highest_point == elevation_mask)
 
     # Isolate the first value from the list
@@ -380,7 +388,6 @@ if __name__ == "__main__":
     for i, p in enumerate(road_nodes_list):
         idx.insert(i, p + p, p)
 
-    #####################north an east swapped############################
     # The query start point is the user location:
     query_start = (north, east)
 
@@ -417,18 +424,7 @@ if __name__ == "__main__":
 
     """""  
     FIND THE SHORTEST ROUTE
-    -----------------------
 
-    Naismith’s rule states that a reasonably fit person is capable of waking at 5km/hr and that an additional minute 
-    is added for every 10 meters of climb (i.e., ascent not descent). To successfully complete this task you could 
-    calculate the weight iterating through each link segment. Moreover, if you are not capable to solve this task 
-    you could (1) approximate this algorithm by calculating the weight using only the start and end node elevation; 
-    (2) identify the shortest distance from the node nearest the user to the node nearest the highest point using only
-    inks in the ITN. To test the Naismith’s rule, you can use (439619, 85800) as a starting point.
-    Every 0.72 seconds, we travel 1 meter 
-    Therefore the time taken to travel each segment is 0.72 x the length of the segment 
-    If the segment rises by more than 10 meters we can add a mintute 
-    We need to turn the weighting value in to a time value    
     """""
     # Some test coordinates
     # end to end
@@ -494,16 +490,21 @@ if __name__ == "__main__":
             road_links[link]['start'],
             fid=link,
             length=road_links[link]['length'],
-            time=time_weight)
+            time=time_weight )
 
     # Identify the shortest path using dijkstra_path function
-    path = nx.dijkstra_path(network, source=first_node_id, target=last_node_id, weight='time')
+    path = nx.dijkstra_path( network,
+                             source=first_node_id,
+                             target=last_node_id,
+                             weight='time' )
 
     # assign the path the colour red
-    shortest_path = color_path(network, path, "red")
+    shortest_path = color_path( network,
+                                path,
+                                "red" )
 
     # Retrieve the node colours
-    node_colors, edge_colors = obtain_colors(shortest_path)
+    node_colors, edge_colors = obtain_colors( shortest_path )
 
     links = []  # this list will be used to populate the feature id (fid) column
     geom = []  # this list will be used to populate the geometry column
@@ -512,32 +513,17 @@ if __name__ == "__main__":
     first_node = path[0]
     for node in path[1:]:
         link_fid = network.edges[first_node, node]['fid']
-        links.append(link_fid)
-        geom.append(LineString(road_links[link_fid]['coords']))
+        links.append( link_fid )
+        geom.append( LineString( road_links[link_fid]['coords'] ) )
         first_node = node
 
     # Create Geopandas shortest path for plotting
-    shortest_path_gpd = gpd.GeoDataFrame({"fid": links, "geometry": geom})
-    # head = shortest_path_gpd.head()
-    # print(head, "heaad")
+    shortest_path_gpd = gpd.GeoDataFrame( {"fid": links,
+                                           "geometry": geom} )
 
     """""
     PLOTTING                                           
     --------
-    Plot a background map 10km x 10km of the surrounding area. You are free to use either a 1:50k Ordnance Survey
-    raster (with internal color-map). Overlay a transparent elevation raster with a suitable color-map. Add the user’s
-    starting point with a suitable marker, the highest point within a 5km buffer with a suitable marker, and the
-    shortest route calculated with a suitable line. Also, you should add to your map, a color-bar showing the elevation
-    range, a north arrow, a scale bar, and a legend.
-    To create a GeoDataFrame of the shortest path and then display it on top of a raster.
-    We shall be using the following packages and the background map.
-    import rasterio
-    import pyproj
-    import numpy as np
-    import geopandas as gpd
-    import matplotlib.pyplot as plt
-    import cartopy.crs as ccrs
-    from shapely.geometry import LineString
     """""
     #
     # Todo: Plotting check points:
