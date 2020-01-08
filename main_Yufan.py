@@ -115,14 +115,28 @@ def color_path(network, path, color="blue"):
 
 
 # Function to obtain colours
+# Graph to which you wish to obtain the colours
+# Default nodes and edges are assigment within the function
 def obtain_colors(graph, default_node="blue", default_edge="black"):
-    node_colors = []
-    for node in graph.nodes:
-        node_colors.append(graph.nodes[node].get('color', default_node))
-    edge_colors = []
-    for u, v in graph.edges:
-        edge_colors.append(graph.edges[u, v].get('color', default_edge))
-    return node_colors, edge_colors
+    try:
+        node_colors = []
+        for node in graph.nodes:
+            node_colors.append(graph.nodes[node].get('color', default_node))
+        edge_colors = []
+        for u, v in graph.edges:
+            edge_colors.append(graph.edges[u, v].get('color', default_edge))
+        return node_colors, edge_colors
+    except IOError:
+        print("Unable to perform this operation")
+
+
+# Function to create a smaller interior box given a buffer area
+# buffer argument takes the buffer range yo would like to create
+# x is a list of x values
+# y is a list of y values
+def create_buffer_box(buffer, x, y):
+    return [(x[2] + buffer, y[0] + buffer), (x[2] + buffer, y[1] - buffer), (x[0] - buffer, y[1] + buffer),
+            (x[0] - buffer, y[0] - buffer)]
 
 
 """""
@@ -152,27 +166,63 @@ if __name__ == "__main__":
     you can select a random point within 5km of the user.
     """""
 
-    # Import elevation map
+    # Import elevation map into a raterio file
     elevation = rasterio.open('elevation/SZ.asc')
 
-    # Create elevation array
+    # rasterio.transform used to extract the resolution
+    raster_resolution = elevation.transform[0]
+
+    # Create elevation numpy array
     elevation_array = elevation.read(1)
 
     # Import the background map
     background = rasterio.open("background/raster-50k_2724246.tif")
+
+    # Create a background nuympy array
+    background_array = background.read(1)
 
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
 
     # Ask the user for their location
     print("Please input your location")
-    north, east = int(input("east: ")), int(input("north: "))
+    north, east = int(input("north: ")), int(input("east: "))
 
     # Create a buffer zone of 5km
     location = Point(east, north)
 
-    # create a to spec bounding box "tile"
-    tile = Polygon([(430000, 80000), (430000, 95000), (465000, 95000), (465000, 80000)])
+    # Get window dimensions for the point
+    left, right = east - 5000, east + 5000
+    bottom, top = north - 5000, north + 5000
+
+    # Create a window
+    row_offset, col_offset = elevation.index(left, top)
+    row_op, col_op = elevation.index(right, bottom)
+    window_height = col_op - col_offset
+    window_width = row_op - row_offset
+    buffer_window = Window(col_offset, row_offset, window_width, window_height)
+
+    heights_array = elevation.read(1, window=buffer_window)
+    print(heights_array)
+
+    elevation_box_xy = elevation.bounds
+    elevation_raster_box = box(*list(elevation.bounds))
+    elevation_box_x, elevation_box_y = elevation_raster_box.exterior.xy
+    print(elevation_box_x)
+    print(elevation_box_y)
+
+    # Append the x and y values to lists to be used in buffer box function
+    e_x = []
+    e_y = []
+    for i in elevation_box_x:
+        e_x.append(i)
+    for i in elevation_box_y:
+        e_y.append(i)
+
+    # Create the buffer box file by calling the create buffer box function
+    print(create_buffer_box(5000, e_x, e_y))
+    buffer_box = Polygon(create_buffer_box(5000, e_x, e_y))
+    print(buffer_box)
 
     # Create a 5km buffer
     buffer_zone = location.buffer(5000)
@@ -184,16 +234,13 @@ if __name__ == "__main__":
     plot_buffer_bounds = tuple(plot_buffer.bounds)
 
     # Test is coordinate buffer zone is within bounding box
-    if on_tile(buffer_zone, tile):
+    if is_point_or_shape_in_shape(
+            buffer_zone,
+            buffer_box):
         print(" ")
     else:
         # The user is advised to quit the application
         print("You location is not in range, please close the application")
-        # The code stops running
-        # #sys.exit()
-
-    # Create an intersect polygon with the tile
-    intersection_shape = buffer_zone.intersection(tile)
 
     # Get the buffer zone/ intersection coordinates
     x_bi, y_bi = intersection_shape.exterior.xy
