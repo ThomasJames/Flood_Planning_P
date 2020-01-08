@@ -6,10 +6,11 @@ from pyproj import Transformer
 import shapely
 from rtree.index import Index
 from shapely import geometry
-from shapely.geometry import Point
+from shapely.geometry import Point, box
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
 import matplotlib.pyplot as plt
+import rasterio.crs
 from pyproj import Geod
 import geopandas as gpd
 import rasterio
@@ -26,12 +27,26 @@ import geopandas as gpd
 import json
 from rasterio.mask import mask
 from rasterio import mask
+from rasterio.transform import xy, rowcol, from_bounds
 
 
 # Function to test if any object is within a polygon
 def on_tile(c, b):
     try:
         if b.contains(c):
+            return True
+        else:
+            return False
+    except IOError:
+        print("Unable to perform this operation")
+
+
+# Function to test if any object is within a polygon
+# shapley_object can be any shapley object
+# Shaoe - Must be a shapley shape
+def is_point_or_shape_in_shape(shapley_object, shape):
+    try:
+        if shape.contains(shapley_object):  # Test if onject within shape
             return True
         else:
             return False
