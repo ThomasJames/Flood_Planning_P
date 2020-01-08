@@ -134,35 +134,60 @@ def create_buffer_box(buffer, x, y):
          (x[0] - buffer, y[0] - buffer)]
 
 
-def extend_region(array, x_coord, y_coord, transform):
-    pix_x, pix_y = rasterio.transform.rowcol( transform, x_coord, y_coord )
-    print( pix_x )
-    print( pix_y )
+# def extend_region(array, x_coord, y_coord, transform):
+#
+#     pix_x, pix_y = rasterio.transform.rowcol( transform, x_coord, y_coord )
+#     print( pix_x )
+#     print( pix_y )
+#
+#     x_a = array.shape[0]
+#     y_a = array.shape[1]
+#
+#     over = 0
+#     if pix_x > x_a:
+#         over += pix_x - x_a
+#         if pix_x < 0:
+#             over += abs(pix_y)
+#             if pix_y > y_a:
+#                 over += pix_y - y_a
+#                 if pix_y < 0:
+#                     over += abs(pix_y)
+#
+#     else:
+#         print("on the raster")
+#     print(over)
+#     out_array = np.pad( array, over, mode='constant' )
+#     return out_array
 
-    x_a = array.shape[0]
-    y_a = array.shape[1]
-
-    if pix_x > x_a:
-        over = pix_x - x_a
-        array_out = np.pad( array, [(0, 0), (0, over)], mode='constant' )  # Pad 0's to the right of the array
-        return array_out
-    elif pix_x < 0:
-        over = abs( pix_x )
-        array_out = np.pad( array, [(over, 0), (0, 0)], mode='constant' )  # Pad 0's to the left of the array
-        return array_out
-    else:
-        print( "The x value is in in line with the raster " )
-
-    if pix_x > y_a:
-        over = pix_x - y_a
-        array_out = np.pad( array, [(0, 0), (0, over)], mode='constant' )  # Pad 0's to the right of the array
-        return array_out
-    elif pix_x < 0:
-        over = abs( pix_x )
-        array_out = np.pad( array, [(over, 0), (0, 0)], mode='constant' )  # Pad 0's to the left of the array
-        return array_out
-    else:
-        print( "The y value is in in line with the raster " )
+def moving_window(arr, size, pad_num):
+    x, y = arr.shape
+    for j in range( x ):
+        for i in range( y ):
+            l = i - size
+            if l < 0:
+                lp = l * -1
+                l = 0
+            else:
+                lp = 0
+            r = i + size
+            if r > y - 1:
+                rp = r - y + 1
+                r = y - 1
+            else:
+                rp = 0
+            t = j - size
+            if t < 0:
+                tp = t * -1
+                t = 0
+            else:
+                tp = 0
+            b = j + size
+            if b > x - 1:
+                bp = b - x + 1
+                b = x - 1
+            else:
+                bp = 0
+            yield np.pad( arr[l:r, t:b], ((lp, rp), (tp, bp)), 'constant', constant_values=(pad_num) )
 
 
 """""
@@ -320,8 +345,9 @@ if __name__ == "__main__":
     EXTENDING THE REGION
     """""
 
-    extended = (extend_region( elevation_array, east, north, out_transform ))
-    print( extended.shape )
+    # def moving_window(arr, size, pad_num):
+
+    # sub_img = np.pad( src.read_band( 1, window=((0, 190), (0, 190)) ), pad_width=((10, 0), (10, 0)), mode='constant' )
 
     """""  
     IDENTIFY THE NETWORK
