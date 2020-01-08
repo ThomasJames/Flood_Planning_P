@@ -12,7 +12,6 @@ from shapely.geometry import Polygon
 import matplotlib.pyplot as plt
 import rasterio.crs
 from pyproj import Geod
-import geopandas as gpd
 import rasterio
 from rasterio import plot, warp
 import rtree
@@ -22,7 +21,6 @@ import rasterio
 from rasterio import mask
 from rasterio.windows import Window
 import pyproj
-import numpy as np
 import geopandas as gpd
 import json
 from rasterio.mask import mask
@@ -578,7 +576,7 @@ if __name__ == "__main__":
     # Ask the user for their weight and height.
     if input("key \"y\" if you Would like to know how many calories you will burn? ") == "y" or "Y" or "yes":
         weight = int(input("how much do you weigh in kg?"))
-        height = int(input("How tall are you in meters?"))
+        height = float(input("How tall are you in meters?"))
         # Calculate the calories burnt
         calories_burnt_per_second = (0.35 * weight) + ((1.38889 ** 2) / height) * (0.029) * weight
         travel_time_s = 0.72 * total_distance_travelled / 3600
