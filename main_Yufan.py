@@ -26,22 +26,51 @@ import json
 from rasterio.mask import mask
 from rasterio import mask
 from rasterio.transform import xy, rowcol, from_bounds
+from tkinter import ttk
+
+"""class MyWindow:
+    def __init__(self, win):
+        self.lbl1 = Label(win, text='Easting')
+        self.lbl2 = Label(win, text='Northing')
+        self.t1 = Entry(bd=3)
+        self.t2 = Entry()
+        self.btn1 = Button(win, text='Run "Higher Ground" Protocol')
+        self.lbl1.place(x=100, y=50)
+        self.t1.place(x=200, y=50)
+        self.lbl2.place(x=100, y=100)
+        self.t2.place(x=200, y=100)
+        self.b1 = Button(win, text='Run "Higher Ground" Protocol', command=self.add)
+        # self.b2.bind('<Button-1>', self.sub)
+        self.b1.place(x=100, y=150)
+
+    def add(self):
+        # self.response = self.t1.get(), self.t2.get()
+        east1 = self.t1.get()
+        north1 = self.t2.get()
+        master = Tk()
+        master.destroy()
+        # self.t3.delete(0, 'end')
+        # num1=int(self.t1.get())
+        # num2=int(self.t2.get())
+        # result=num1+num2
+        # self.t3.insert(END, str(result))
+        print(east1, north1)
 
 
-# Function to test if any object is within a polygon
-def on_tile(c, b):
-    try:
-        if b.contains(c):
-            return True
-        else:
-            return False
-    except IOError:
-        print("Unable to perform this operation")
+#       def ok():
+#           self.response = entry1.get(), entry2.get()
+
+
+window = Tk()
+mywin = MyWindow(window)
+window.title('Flood Protection Program')
+window.geometry("400x300+10+10")
+window.mainloop()"""
 
 
 # Function to test if any object is within a polygon
 # shapley_object can be any shapley object
-# Shape - Must be a shapley shape
+# Shape - Must be a shapley shape8580
 def is_point_or_shape_in_shape(shapley_object, shape):
     try:
         if shape.contains(shapley_object):  # Test if object within shape
@@ -104,12 +133,15 @@ def elevation_adjustment(coords, elevation_array, transformation_matrix):
 # path - the output path from the dijkstra_path
 # color - Built in default to blue
 def color_path(network, path, color="blue"):
-    res = network.copy()
-    first = path[0]
-    for node in path[1:]:
-        res.edges[first, node]["color"] = color
-        first = node
-    return res
+    try:
+        res = network.copy()
+        first = path[0]
+        for node in path[1:]:
+            res.edges[first, node]["color"] = color
+            first = node
+        return res
+    except IOError:
+        print("Unable to perform this operation")
 
 
 # Function to obtain colours
@@ -133,7 +165,9 @@ def obtain_colors(graph, default_node="blue", default_edge="black"):
 # x is a list of x values
 # y is a list of y values
 def create_buffer_box(buffer, x, y):
-    return [(x[2] + buffer, y[0] + buffer), (x[2] + buffer, y[1] - buffer), (x[0] - buffer, y[1] + buffer),
+    return [(x[2] + buffer, y[0] + buffer),
+            (x[2] + buffer, y[1] - buffer),
+            (x[0] - buffer, y[1] + buffer),
             (x[0] - buffer, y[0] - buffer)]
 
 
