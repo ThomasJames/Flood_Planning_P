@@ -1,4 +1,3 @@
-import numpy as np
 import sys
 import pandas as pd
 # from pyproj import CRS
@@ -12,7 +11,6 @@ from shapely.geometry import Polygon
 import matplotlib.pyplot as plt
 import rasterio.crs
 from pyproj import Geod
-import geopandas as gpd
 import rasterio
 from rasterio import plot, warp
 import rtree
@@ -30,10 +28,9 @@ from rasterio import mask
 from rasterio.enums import Resampling
 import rasterio.transform as transform
 from rasterio import windows
+import tkinter as tk
 from tkinter import *
 from rasterio.transform import xy, rowcol, from_bounds
-
-from tkinter import ttk
 
 
 class MyWindow:
@@ -47,7 +44,7 @@ class MyWindow:
         self.t1.place(x=200, y=50)
         self.lbl2.place(x=100, y=100)
         self.t2.place(x=200, y=100)
-        self.b1 = Button(win, text='Run "Higher Ground" Protocol', command=self.add)
+        self.b1 = Button(win, text='Quit and Run "Higher Ground" Protocol', command=self.add)
         # self.b2.bind('<Button-1>', self.sub)
         self.b1.place(x=100, y=150)
 
@@ -69,11 +66,13 @@ class MyWindow:
 #           self.response = entry1.get(), entry2.get()
 
 
-window = Tk()
+window = tk.Tk()
 mywin = MyWindow(window)
 window.title('Flood Protection Program')
 window.geometry("400x300+10+10")
 window.mainloop()
+eastinput = mywin.get()
+northinput = mywin.get()
 
 
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
@@ -228,8 +227,11 @@ if __name__ == "__main__":
     """""
 
     # Request the user location
-    print("Please input your location")
-    east, north = int(input("north: ")), int(input("east: "))
+    print("Your location has been input.")
+    # east, north = int(input("north: ")), int(input("east: "))
+
+    east = float(eastinput)
+    north = float(northinput)
     # Is there something wrong? (Yufan)
 
     # Create a shapley point
@@ -550,12 +552,11 @@ if __name__ == "__main__":
 
     # fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     # axs[0].imshow(elevation_mask)
-
     # custom paint job
     cmap = plt.get_cmap('inferno')
     cmap.set_under('r', alpha=0)
 
-    fig, ax = plt.subplots(dpi=300)
+    fig, ax = plt.subplots(dpi=500)
     elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno', zorder=2)
     fig.colorbar(elevation_plot, ax=ax)
 
@@ -563,7 +564,7 @@ if __name__ == "__main__":
     ax.set_ylim([x_window_lower, x_window_higher])
     rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
     rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=5, alpha=0.5, cmap=cmap, vmin=0.01)
-    shortest_path_gpd.plot(ax=ax, edgecolor='black', linewidth=5, zorder=10)
+    shortest_path_gpd.plot(ax=ax, edgecolor='blue', linewidth=2, zorder=10)
 
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
@@ -627,7 +628,7 @@ if __name__ == "__main__":
     # Ask the user for their weight and height.
     if input("key \"y\" if you Would like to know how many calories you will burn? ") == "y":
         weight = int(input("how much do you weigh in kg? :"))
-        height = int(input("How tall are you in meters? "))
+        height = float(input("How tall are you in meters? "))
         # Calculate the calories burnt
         calories_burnt_per_second = (0.35 * weight) + ((1.38889 ** 2) / height) * (0.029) * weight
         travel_time_s = 0.72 * total_distance_travelled / 3600
