@@ -39,7 +39,8 @@ class MyWindow:
         self.lbl2 = Label(win, text='Northing')
         self.t1 = Entry(bd=3)
         self.t2 = Entry()
-        self.btn1 = Button(win, text='Run "Higher Ground" Protocol')
+        self.var1 = self.t1.get()
+        self.var2 = self.t2.get()
         self.lbl1.place(x=100, y=50)
         self.t1.place(x=200, y=50)
         self.lbl2.place(x=100, y=100)
@@ -60,6 +61,9 @@ class MyWindow:
         # result=num1+num2
         # self.t3.insert(END, str(result))
         print(east1, north1)
+        # clear the input each time after press the button
+        mywin.t1.delete(0, 'end')
+        mywin.t2.delete(0, 'end')
 
 
 #       def ok():
@@ -70,9 +74,13 @@ window = tk.Tk()
 mywin = MyWindow(window)
 window.title('Flood Protection Program')
 window.geometry("400x300+10+10")
+window.bind('<Return>', lambda event: mywin.add())  # be able to use "Enter" key to run the GUI
 window.mainloop()
-eastinput = mywin.t1.get()
-northinput = mywin.t2.get()
+
+# eastinput = mywin.var1
+# northinput = mywin.var2
+eastinput = StringVar(east1)
+northinput = StringVar(north1)
 
 
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
@@ -230,9 +238,8 @@ if __name__ == "__main__":
     print("Your location has been input.")
     # east, north = int(input("north: ")), int(input("east: "))
 
-    east = float(eastinput)
-    north = float(northinput)
-    # Is there something wrong? (Yufan)
+    east = int(eastinput)
+    north = int(northinput)
 
     # Create a shapley point
     location = Point(north, east)
