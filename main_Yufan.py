@@ -71,8 +71,8 @@ mywin = MyWindow(window)
 window.title('Flood Protection Program')
 window.geometry("400x300+10+10")
 window.mainloop()
-eastinput = mywin.get()
-northinput = mywin.get()
+eastinput = mywin.t1.get()
+northinput = mywin.t2.get()
 
 
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
