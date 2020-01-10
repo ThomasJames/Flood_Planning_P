@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import rasterio.crs
 from pyproj import Geod
 import rasterio
-from rasterio import plot, warp
+from rasterio import plot, warp, windows
 import rtree
 from rtree import index
 import networkx as nx
@@ -201,12 +201,6 @@ if __name__ == "__main__":
     # Import elevation map into a raterio file
     elevation = rasterio.open('elevation/SZ.asc')
 
-    # rasterio.transform used to extract the resolution
-    raster_resolution = elevation.transform[0]
-
-    # Create elevation numpy array
-    elevation_array = elevation.read(1)
-
     # Import the background map
     background = rasterio.open("background/raster-50k_2724246.tif")
 
@@ -216,32 +210,10 @@ if __name__ == "__main__":
     # Import the isle_of_wight shape
     island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
 
-    # Ask the user for their location
-    print("Please input your location")
-    north, east = int(input("north: ")), int(input("east: "))
-
-    # Create a buffer zone of 5km
-    location = Point(east, north)
-
-    # Get window dimensions for the point
-    left, right = east - 5000, east + 5000
-    bottom, top = north - 5000, north + 5000
-
-    # Create a window
-    row_offset, col_offset = elevation.index(left, top)
-    row_op, col_op = elevation.index(right, bottom)
-    window_height = col_op - col_offset
-    window_width = row_op - row_offset
-    buffer_window = Window(col_offset, row_offset, window_width, window_height)
-
-    heights_array = elevation.read(1, window=buffer_window)
-    print(heights_array)
-
+    # Retrieve the coordinates of the elevation box
     elevation_box_xy = elevation.bounds
     elevation_raster_box = box(*list(elevation.bounds))
     elevation_box_x, elevation_box_y = elevation_raster_box.exterior.xy
-    print(elevation_box_x)
-    print(elevation_box_y)
 
     # Append the x and y values to lists to be used in buffer box function
     e_x = []
@@ -251,31 +223,91 @@ if __name__ == "__main__":
     for i in elevation_box_y:
         e_y.append(i)
 
-    # Create the buffer box file by calling the create buffer box function
-    print(create_buffer_box(5000, e_x, e_y))
+    # create the buffer box file by calling the create buffer box function
     buffer_box = Polygon(create_buffer_box(5000, e_x, e_y))
-    print(buffer_box)
 
-    # Create a 5km buffer
+    # Create elevation numpy array
+    elevation_array = elevation.read(1)
+
+    # Ask the user for their location
+    print("Please input your location")
+    north, east = int(input("north: ")), int(input("east: "))
+
+    # Create shapley point#?#
+    location = Point(north, east)
+
     buffer_zone = location.buffer(5000)
 
-    # Create a 10km buffer for plotting purposes
     plot_buffer = location.buffer(10000)
 
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple(plot_buffer.bounds)
 
-    # Test is coordinate buffer zone is within bounding box
+    # Create
+    elevation_raster_buffer_intersect = elevation_raster_box.intersection(buffer_zone)
+
+    # Check if user is on island
+    user_on_land = (island_shapefile.contains(location))
+    if user_on_land[0] == True:
+        print("User is on land")
+    else:
+        print("Swim to shore")
+
+    # Test if coordinate within buffer zone is within the specified bounding box
     if is_point_or_shape_in_shape(
             buffer_zone,
             buffer_box):
         print(" ")
     else:
-        # The user is advised to quit the application
-        print("You location is not in range, please close the application")
+        print("You aren't in the specified bounding box please wait...")
+        if input("click \"y\" if you Would you like to extend the region? ") == "y":
+            if is_point_or_shape_in_shape(elevation_raster_buffer_intersect, elevation_raster_box):
+                print("Region has been extended")
+            else:
+                "You location is not in range"
+                sys.exit()
 
-    # Get the buffer zone/ intersection coordinates
-    x_bi, y_bi = buffer_zone.exterior.xy
+        # Create window bounds
+        x_window_lower = (east - 5000)
+        x_window_higher = (east + 5000)
+        y_window_lower = (north - 5000)
+        y_window_higher = (north + 5000)
+
+        background_transform = background.transform
+        bottom_left = background.transform * (0, 0)
+        top_right = background.transform * (background.width, background.height)
+
+        # Transform the lower limit
+        window_lower_lim = rasterio.transform.rowcol(background_transform,
+                                                     y_window_lower,
+                                                     x_window_lower)
+
+        # Transform the upper limit
+        window_upper_lim = rasterio.transform.rowcol(background_transform,
+                                                     y_window_higher,
+                                                     x_window_higher)
+
+        # Read a window of data
+        slice_ = (slice(window_upper_lim[0],
+                        window_lower_lim[0]),
+                  slice(window_lower_lim[1],
+                        window_upper_lim[1]))
+
+        window_slice = windows.Window.from_slices(*slice_)
+
+        # Transform the window
+        transform_window = windows.transform(window_slice,
+                                             background.transform)
+
+        window_map = background.read(1, window=window_slice)
+
+        palette = np.array([value for key, value in background.colormap(1).items()])
+
+        island_raster_image = palette[window_map.astype(int)]
+
+        window_map_raster = rasterio.plot.reshape_as_raster(island_raster_image)
+
+        rasterio.plot.show(window_map_raster)
 
     # Create coordinate list to allow for iteration
     highest_east, highest_north = buffer_zone.exterior.xy
@@ -350,10 +382,10 @@ if __name__ == "__main__":
         idx.insert(i, p + p, p)
 
     # The query start point is the user location:
-    query_start = (east, north)
+    query_start = (north, east)
 
-    # The query finish point is the highest point
-    query_finish = (highest_east, highest_north)
+    # The query finish point is the highest point #?#
+    query_finish = (highest_north, highest_east)
 
     # Find the nearest value to the start
     for i in idx.nearest(query_start, 1):
@@ -362,10 +394,6 @@ if __name__ == "__main__":
     # Use rtrees to query the nearest value to the finish
     for i in idx.nearest(query_finish, 1):
         finish_node = road_nodes_list[i]
-
-    # Display the node coordinates
-    print("The start node is at: ", start_node)
-    print("The finish node is at: ", finish_node)
 
     # Extract the 'roadlinks' data
     road_links = solent_itn_json['roadlinks']
@@ -523,7 +551,20 @@ if __name__ == "__main__":
     # todo: Elevation side bar
     # todo: A legend - Start / Highest / Shortest path
 
-    shortest_path_gpd.plot(color="salmon", )
+    # custom paint job
+    cmap = plt.get_cmap('inferno')
+    cmap.set_under('r', alpha=0)
+
+    fig, ax = plt.subplots(dpi=300)
+    elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno', zorder=2)
+    fig.colorbar(elevation_plot, ax=ax)
+
+    ax.set_xlim([y_window_lower, y_window_higher])
+    ax.set_ylim([x_window_lower, x_window_higher])
+    rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
+    rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=5, alpha=0.5, cmap=cmap, vmin=0.01)
+    shortest_path_gpd.plot(ax=ax, edgecolor='yellow', linewidth=2, zorder=10)
+
     plt.title("Isle of Wight Flood Plan")
     # y label
     plt.ylabel("Northings")
@@ -548,9 +589,9 @@ if __name__ == "__main__":
     # highest point
     plt.scatter(finish_node[0], finish_node[1], color="white", marker="x")
     # Plot the sidebar
-    plt.contourf(elevation_array, cmap="viridis",
-                 levels=list(range(0, 300, 10)))
-    cbar = plt.colorbar()
+
+    # plt.contourf(elevation_array, cmap="viridis",levels=list(range(0, 300, 10)))
+    # cbar = plt.colorbar()
 
     # plt.imshow(background.read(1)
     # Open rasterio
@@ -565,11 +606,11 @@ if __name__ == "__main__":
     # PLot the line between the highest point and the last node
 
     # Plotting of the buffer zone
-    plt.fill(x_bi, y_bi, color="skyblue", alpha=0.2)
+    # plt.fill(x_bi, y_bi, color="skyblue", alpha=0.2)
 
     # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
     # Plotting of the elevation
-    rasterio.plot.show(elevation, alpha=1, contour=False)
+    # rasterio.plot.show(elevation, alpha=1, contour=False)
 
     # Create the plot
     plt.show()
