@@ -65,7 +65,7 @@ class MyWindow:
             print(east1, north1)
             mywin.t1.delete(0, 'end')  # clear the input each time after press the button
             mywin.t2.delete(0, 'end')
-            # window.quit() 
+            # window.quit()
             # to quit the window and continue to run the remained coeds, but it may cause "Not Responding"
         except:
             tk.messagebox.showerror(title='Warning', message='You should input the coordinate of your location!')
