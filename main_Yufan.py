@@ -31,10 +31,12 @@ from rasterio import windows
 import tkinter as tk
 from tkinter import *
 from rasterio.transform import xy, rowcol, from_bounds
+import tkinter.messagebox
 
 
 class MyWindow:
     def __init__(self, win):
+        # win = tk.Frame()
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
         self.ibl3 = Label(win, text='Please input your current location.').pack()
@@ -46,7 +48,7 @@ class MyWindow:
         self.t1.place(x=200, y=50)
         self.lbl2.place(x=100, y=100)
         self.t2.place(x=200, y=100)
-        self.b1 = Button(win, text='Quit and Run "Higher Ground" Protocol', command=self.add)
+        self.b1 = Button(win, text='Close and Run "Higher Ground" Protocol', command=self.add)
         # self.b2.bind('<Button-1>', self.sub)
         self.b1.place(x=100, y=150)
 
@@ -63,7 +65,10 @@ class MyWindow:
             print(east1, north1)
             mywin.t1.delete(0, 'end')  # clear the input each time after press the button
             mywin.t2.delete(0, 'end')
+            # window.quit() 
+            # to quit the window and continue to run the remained coeds, but it may cause "Not Responding"
         except:
+            tk.messagebox.showerror(title='Warning', message='You should input the coordinate of your location!')
             print("You should input the coordinate of your location")
 
 #       def ok():
