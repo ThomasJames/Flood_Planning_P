@@ -37,8 +37,8 @@ class MyWindow:
     def __init__(self, win):
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
-        self.var1 = tk.StringVar("")
-        self.var2 = tk.StringVar("")
+        self.var1 = tk.IntVar()
+        self.var2 = tk.IntVar()
         self.t1 = Entry(bd=3, textvariable=self.var1)
         self.t2 = Entry(textvariable=self.var2)
         self.lbl1.place(x=100, y=50)
@@ -51,24 +51,21 @@ class MyWindow:
 
     def add(self):
         # self.response = self.t1.get(), self.t2.get()
+        global east1, north1
         east1 = self.var1.get()
         north1 = self.var2.get()
-        master = Tk()
-        master.destroy()
-        # self.t3.delete(0, 'end')
         # num1=int(self.t1.get())
         # num2=int(self.t2.get())
         # result=num1+num2
         # self.t3.insert(END, str(result))
-        # clear the input each time after press the button
-        mywin.t1.delete(0, 'end')
+        mywin.t1.delete(0, 'end')  # clear the input each time after press the button
         mywin.t2.delete(0, 'end')
 
-        print(type(east1), north1)
-
+        print(east1, north1)
 
 #       def ok():
 #           self.response = entry1.get(), entry2.get()
+
 
 window = tk.Tk()
 mywin = MyWindow(window)
