@@ -30,18 +30,20 @@ from rasterio import mask
 from rasterio.enums import Resampling
 import rasterio.transform as transform
 from rasterio import windows
+import tkinter as tk
 from tkinter import *
 from rasterio.transform import xy, rowcol, from_bounds
 
-from tkinter import ttk
 
-"""class MyWindow:
+class MyWindow:
     def __init__(self, win):
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
-        self.t1 = Entry(bd=3)
-        self.t2 = Entry()
-        self.btn1 = Button(win, text='Run "Higher Ground" Protocol')
+        self.ibl3 = Label(win, text='Please input your current location, press Run and close window.').pack()
+        self.var1 = tk.IntVar()
+        self.var2 = tk.IntVar()
+        self.t1 = Entry(bd=3, textvariable=self.var1)
+        self.t2 = Entry(bd=3, textvariable=self.var2)
         self.lbl1.place(x=100, y=50)
         self.t1.place(x=200, y=50)
         self.lbl2.place(x=100, y=100)
@@ -52,27 +54,36 @@ from tkinter import ttk
 
     def add(self):
         # self.response = self.t1.get(), self.t2.get()
-        east1 = self.t1.get()
-        north1 = self.t2.get()
-        master = Tk()
-        master.destroy()
-        # self.t3.delete(0, 'end')
-        # num1=int(self.t1.get())
-        # num2=int(self.t2.get())
-        # result=num1+num2
-        # self.t3.insert(END, str(result))
-        print(east1, north1)
+        try:
+            global east1, north1
+            east1 = self.var1.get()
+            north1 = self.var2.get()
+            # num1=int(self.t1.get())
+            # num2=int(self.t2.get())
+            # result=num1+num2
+            # self.t3.insert(END, str(result))
+            print(east1, north1)
+            mywin.t1.delete(0, 'end')  # clear the input each time after press the button
+            mywin.t2.delete(0, 'end')
+
+        except:
+            print("You should input the coordinate of your location")
 
 
 #       def ok():
 #           self.response = entry1.get(), entry2.get()
 
 
-window = Tk()
+window = tk.Tk()
 mywin = MyWindow(window)
 window.title('Flood Protection Program')
 window.geometry("400x300+10+10")
-window.mainloop()"""
+window.bind('<Return>', lambda event: mywin.add())  # be able to use "Enter" key to run the GUI
+mywin.t1.focus()  # make the cursor appear in the first entry initially
+window.mainloop()
+
+eastinput = int(east1)
+northinput = int(north1)
 
 
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
@@ -218,26 +229,29 @@ if __name__ == "__main__":
         e_y.append( i )
 
     # Create the buffer box file by calling the create buffer box function
-    buffer_box = Polygon( create_buffer_box( 5000, e_x, e_y ) )
+    buffer_box = Polygon(create_buffer_box(5000, e_x, e_y))
 
     # Create elevation numpy array
-    elevation_array = elevation.read( 1 )
+    elevation_array = elevation.read(1)
 
     """""  
     RETRIEVE AND MANIPULATE THE USER INPUT   
     """""
 
     # Request the user location
-    print( "Please input your location" )
-    east, north = int( input( "north: " ) ), int( input( "east: " ) )
+    print("Your location has been input.")
+    # east, north = int(input("north: ")), int(input("east: "))
+
+    east = int(eastinput)
+    north = int(northinput)
 
     # Create a shapley point
-    location = Point( north, east )
+    location = Point(north, east)
 
-    buffer_zone = location.buffer( 5000 )
+    buffer_zone = location.buffer(5000)
 
     # Create a 10km buffer for plotting purposes
-    plot_buffer = location.buffer( 10000 )
+    plot_buffer = location.buffer(10000)
 
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple( plot_buffer.bounds )
