@@ -37,10 +37,10 @@ class MyWindow:
     def __init__(self, win):
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
-        self.t1 = Entry(bd=3)
-        self.t2 = Entry()
-        self.var1 = self.t1.get()
-        self.var2 = self.t2.get()
+        self.var1 = tk.StringVar("")
+        self.var2 = tk.StringVar("")
+        self.t1 = Entry(bd=3, textvariable=self.var1)
+        self.t2 = Entry(textvariable=self.var2)
         self.lbl1.place(x=100, y=50)
         self.t1.place(x=200, y=50)
         self.lbl2.place(x=100, y=100)
@@ -51,8 +51,8 @@ class MyWindow:
 
     def add(self):
         # self.response = self.t1.get(), self.t2.get()
-        east1 = self.t1.get()
-        north1 = self.t2.get()
+        east1 = self.var1.get()
+        north1 = self.var2.get()
         master = Tk()
         master.destroy()
         # self.t3.delete(0, 'end')
@@ -60,27 +60,26 @@ class MyWindow:
         # num2=int(self.t2.get())
         # result=num1+num2
         # self.t3.insert(END, str(result))
-        print(east1, north1)
         # clear the input each time after press the button
         mywin.t1.delete(0, 'end')
         mywin.t2.delete(0, 'end')
 
+        print(type(east1), north1)
+
 
 #       def ok():
 #           self.response = entry1.get(), entry2.get()
-
 
 window = tk.Tk()
 mywin = MyWindow(window)
 window.title('Flood Protection Program')
 window.geometry("400x300+10+10")
 window.bind('<Return>', lambda event: mywin.add())  # be able to use "Enter" key to run the GUI
+mywin.t1.focus()  # make the cursor appear in the first entry initially
 window.mainloop()
 
-# eastinput = mywin.var1
-# northinput = mywin.var2
-eastinput = StringVar(east1)
-northinput = StringVar(north1)
+eastinput = int(east1)
+northinput = int(north1)
 
 
 # Function to join lists into list from 'list = [(x, y), (x, y)]'
