@@ -37,10 +37,11 @@ class MyWindow:
     def __init__(self, win):
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
+        self.ibl3 = Label(win, text='Please input your current location.').pack()
         self.var1 = tk.IntVar()
         self.var2 = tk.IntVar()
         self.t1 = Entry(bd=3, textvariable=self.var1)
-        self.t2 = Entry(textvariable=self.var2)
+        self.t2 = Entry(bd=3, textvariable=self.var2)
         self.lbl1.place(x=100, y=50)
         self.t1.place(x=200, y=50)
         self.lbl2.place(x=100, y=100)
@@ -51,17 +52,19 @@ class MyWindow:
 
     def add(self):
         # self.response = self.t1.get(), self.t2.get()
-        global east1, north1
-        east1 = self.var1.get()
-        north1 = self.var2.get()
-        # num1=int(self.t1.get())
-        # num2=int(self.t2.get())
-        # result=num1+num2
-        # self.t3.insert(END, str(result))
-        mywin.t1.delete(0, 'end')  # clear the input each time after press the button
-        mywin.t2.delete(0, 'end')
-
-        print(east1, north1)
+        try:
+            global east1, north1
+            east1 = self.var1.get()
+            north1 = self.var2.get()
+            # num1=int(self.t1.get())
+            # num2=int(self.t2.get())
+            # result=num1+num2
+            # self.t3.insert(END, str(result))
+            print(east1, north1)
+            mywin.t1.delete(0, 'end')  # clear the input each time after press the button
+            mywin.t2.delete(0, 'end')
+        except:
+            print("You should input the coordinate of your location")
 
 #       def ok():
 #           self.response = entry1.get(), entry2.get()
