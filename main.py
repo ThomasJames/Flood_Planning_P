@@ -251,7 +251,7 @@ if __name__ == "__main__":
     buffer_zone = location.buffer(5000)
 
     # Create a 10km buffer for plotting purposes
-    plot_buffer = location.buffer(10000)
+    plot_buffer = location.buffer(5000)
 
     # Get the bounds for the 10km limits
     plot_buffer_bounds = tuple( plot_buffer.bounds )
@@ -313,18 +313,20 @@ if __name__ == "__main__":
     window_slice = windows.Window.from_slices( *slice_ )
 
     # Transform the window
-    transform_window = windows.transform( window_slice,
-                                          background.transform )
+    transform_window = windows.transform(window_slice,
+                                         background.transform)
 
-    window_map = background.read( 1, window=window_slice )
+    window_map = background.read(1, window=window_slice)
 
-    palette = np.array( [value for key, value in background.colormap( 1 ).items()] )
+    palette = np.array([value for key, value in background.colormap(1).items()])
 
-    island_raster_image = palette[window_map.astype( int )]
+    island_raster_image = palette[window_map.astype(int)]
 
-    window_map_raster = rasterio.plot.reshape_as_raster( island_raster_image )
+    window_map_raster = rasterio.plot.reshape_as_raster(island_raster_image)
 
-    rasterio.plot.show( window_map_raster )
+    print(window_map_raster.shape)
+
+    # rasterio.plot.show( window_map_raster )
 
     # Create coordinate list to allow for iteration
     highest_east, highest_north = buffer_zone.exterior.xy
@@ -566,29 +568,49 @@ if __name__ == "__main__":
 
     # custom paint job
     cmap = plt.get_cmap('inferno')
+
     cmap.set_under('r', alpha=0)
-
+    # All plotting small but collated
     fig, ax = plt.subplots(dpi=300)
-    elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno', zorder=2)
-    fig.colorbar(elevation_plot, ax=ax)
 
-    plt.ylim((x_window_lower, x_window_higher))
-    # 10km easting limit
-    plt.xlim((y_window_lower, y_window_higher))
-    # North Arrow (x, y) to (x+dx, y+dy).
+    elevation_plot = ax.imshow(elevation_mask[0, :, :],
+                               cmap='inferno',
+                               zorder=2)
 
-    ax.set_xlim([y_window_lower, y_window_higher])
-    ax.set_ylim([x_window_lower, x_window_higher])
-    rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
-    rasterio.plot.show(elevation_mask, transform=out_transform, ax=ax, zorder=5, alpha=0.5, cmap=cmap, vmin=0.01)
-    shortest_path_gpd.plot(ax=ax, edgecolor='black', linewidth=5, zorder=10)
+    fig.colorbar(elevation_plot,
+                 ax=ax)
+
+    ax.set_xlim([plot_buffer_bounds[0],
+                 plot_buffer_bounds[2]])
+
+    ax.set_ylim([plot_buffer_bounds[1],
+                 plot_buffer_bounds[3]])
+
+    rasterio.plot.show(window_map_raster,
+                       ax=ax, zorder=1,
+                       transform=transform_window)
+
+    rasterio.plot.show(elevation_mask,
+                       transform=out_transform,
+                       ax=ax,
+                       zorder=5,
+                       alpha=0.5,
+                       cmap=cmap,
+                       vmin=0.01,
+                       label="elevation buffer")
+
+    shortest_path_gpd.plot(ax=ax,
+                           edgecolor='black',
+                           linewidth=3,
+                           label="shortest path",
+                           zorder=10)
 
     # then put all of the rasterio plots on after this
     # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
     # use the correct transforms
-    # cmap =
     # Create the plot
 
+    # plotting too large
     plt.title("Isle of Wight Flood Plan")
     # y label
     plt.ylabel("Northings")
@@ -596,21 +618,27 @@ if __name__ == "__main__":
     plt.xlabel("Eastings")
     # 10km northings limit
 
+    # plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
+    # 10km easting limit
+    # plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
+    # North Arrow (x, y) to (x+dx, y+dy).
+
     plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N", zorder=10)
     # Scale bar (set to 5km)
     plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
 
     plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
-    
+
     plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km")
     # User location
     plt.scatter(east, north, color="black", marker=11)
     # Plot the first node
-    plt.scatter(start_node[0], start_node[1], color="black", marker="x")
+    plt.scatter(start_node[0], start_node[1], color="red", marker="x", label="user position", zorder=11)
     # Nearest node to user
     plt.scatter(highest_east, highest_north, color="white", marker=11)
     # highest point
-    plt.scatter(finish_node[0], finish_node[1], color="white", marker="x")
+    plt.scatter(finish_node[0], finish_node[1], color="green", marker="x", label="highest point", zorder=11)
+    plt.legend(loc="upper right")
 
     plt.show()
 
