@@ -23,9 +23,9 @@ class MyWindow:
     def __init__(self, win):
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
-        self.ibl3 = Label(win, text='Please input your current location, press Run and close window.').pack()
-        self.var1 = tk.IntVar()
-        self.var2 = tk.IntVar()
+        self.ibl3 = Label(win, text='Please input your current location and press enter').pack()
+        self.var1 = tk.StringVar("")
+        self.var2 = tk.StringVar("")
         self.t1 = Entry(bd=3, textvariable=self.var1)
         self.t2 = Entry(bd=3, textvariable=self.var2)
         self.lbl1.place(x=100, y=50)
@@ -33,22 +33,17 @@ class MyWindow:
         self.lbl2.place(x=100, y=100)
         self.t2.place(x=200, y=100)
         self.b1 = Button(win, text='Run "Higher Ground" Protocol', command=self.add)
-        # self.b2.bind('<Button-1>', self.sub)
         self.b1.place(x=100, y=150)
 
     def add(self):
-        # self.response = self.t1.get(), self.t2.get()
         try:
             global east1, north1
             east1 = self.var1.get()
             north1 = self.var2.get()
-            # num1=int(self.t1.get())
-            # num2=int(self.t2.get())
-            # result=num1+num2
-            # self.t3.insert(END, str(result))
             print(east1, north1)
             mywin.t1.delete(0, 'end')  # clear the input each time after press the button
             mywin.t2.delete(0, 'end')
+            window.destroy()
 
         except:
             print("You should input the coordinate of your location")
