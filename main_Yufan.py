@@ -40,8 +40,8 @@ class MyWindow:
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
         self.lbl3 = Label(win, text='Please input your current location.').pack()
-        self.var1 = tk.IntVar()
-        self.var2 = tk.IntVar()
+        self.var1 = tk.StringVar("")
+        self.var2 = tk.StringVar("")
         # self.var3 = tk.StringVar()
         self.t1 = Entry(bd=3, textvariable=self.var1)
         self.t2 = Entry(bd=3, textvariable=self.var2)
@@ -71,7 +71,7 @@ class MyWindow:
             # mywin.textbox1.insert(0, mywin.var3)
             mywin.t1.delete(0, 'end')  # clear the input each time after press the button
             mywin.t2.delete(0, 'end')
-            # window.quit()
+            window.quit()
             # to quit the window and continue to run the remained coeds, but it may cause "Not Responding"
         except:
             tk.messagebox.showerror(title='Warning', message='You should input the coordinate of your location!')
@@ -573,7 +573,7 @@ if __name__ == "__main__":
     cmap = plt.get_cmap('inferno')
     cmap.set_under('r', alpha=0)
 
-    fig, ax = plt.subplots(dpi=500)
+    fig, ax = plt.subplots(dpi=1000)
     elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno', zorder=2)
     fig.colorbar(elevation_plot, ax=ax)
 
