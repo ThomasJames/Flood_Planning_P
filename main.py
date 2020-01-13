@@ -187,16 +187,16 @@ if __name__ == "__main__":
     """""
 
     # Import the background map
-    background = rasterio.open("background/raster-50k_2724246.tif")
+    background = rasterio.open("...Material/background/raster-50k_2724246.tif")
 
     # Create a background NumPy array
     background_array = background.read(1)
 
     # Import the isle_of_wight shape
-    island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
+    island_shapefile = gpd.read_file("...Material/shape/isle_of_wight.shp")
 
     # Import elevation map
-    elevation = rasterio.open('elevation/SZ.asc')
+    elevation = rasterio.open("...Material/elevation/SZ.asc")
 
     # Retrieve the coordinates of the elevation box
     elevation_box_xy = elevation.bounds
@@ -364,7 +364,7 @@ if __name__ == "__main__":
     IDENTIFY THE NETWORK
     """""
     # Load the ITN network
-    solent_itn_json = "itn/solent_itn.json"
+    solent_itn_json = "...Material/itn/solent_itn.json"
     with open(solent_itn_json, "r") as f:
         solent_itn_json = json.load(f)
     road_links = solent_itn_json['roadlinks']
