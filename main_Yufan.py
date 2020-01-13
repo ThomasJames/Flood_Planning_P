@@ -31,22 +31,27 @@ from rasterio import windows
 import tkinter as tk
 from tkinter import *
 from rasterio.transform import xy, rowcol, from_bounds
+import tkinter.messagebox
 
 
 class MyWindow:
     def __init__(self, win):
+        # win = tk.Frame()
         self.lbl1 = Label(win, text='Easting')
         self.lbl2 = Label(win, text='Northing')
-        self.ibl3 = Label(win, text='Please input your current location.').pack()
+        self.lbl3 = Label(win, text='Please input your current location.').pack()
         self.var1 = tk.IntVar()
         self.var2 = tk.IntVar()
+        # self.var3 = tk.StringVar()
         self.t1 = Entry(bd=3, textvariable=self.var1)
         self.t2 = Entry(bd=3, textvariable=self.var2)
         self.lbl1.place(x=100, y=50)
         self.t1.place(x=200, y=50)
         self.lbl2.place(x=100, y=100)
         self.t2.place(x=200, y=100)
-        self.b1 = Button(win, text='Quit and Run "Higher Ground" Protocol', command=self.add)
+        self.b1 = Button(win, text='Run "Higher Ground" Protocol', command=self.add)
+        # self.textbox1 = tk.Text(win, width=28, height=3)
+        # self.textbox1.place(x=100, y=200)
         # self.b2.bind('<Button-1>', self.sub)
         self.b1.place(x=100, y=150)
 
@@ -61,9 +66,15 @@ class MyWindow:
             # result=num1+num2
             # self.t3.insert(END, str(result))
             print(east1, north1)
+            # mywin.textbox1.delete(0, 'end')
+            # mywin.var3.set('Tips: Now, you can close the window and the programme continues to run.')
+            # mywin.textbox1.insert(0, mywin.var3)
             mywin.t1.delete(0, 'end')  # clear the input each time after press the button
             mywin.t2.delete(0, 'end')
+            # window.quit()
+            # to quit the window and continue to run the remained coeds, but it may cause "Not Responding"
         except:
+            tk.messagebox.showerror(title='Warning', message='You should input the coordinate of your location!')
             print("You should input the coordinate of your location")
 
 #       def ok():
