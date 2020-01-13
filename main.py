@@ -273,6 +273,7 @@ if __name__ == "__main__":
     y_window_lower = (north - 5000)
     y_window_higher = (north + 5000)
 
+    # Transform of shape of background raster array
     background_transform = background.transform
     bottom_left = background.transform * (0, 0)
     top_right = background.transform * (background.width, background.height)
@@ -293,6 +294,7 @@ if __name__ == "__main__":
               slice(window_lower_lim[1],
                     window_upper_lim[1]))
 
+    # extract rasterio data from array as slice
     window_slice = windows.Window.from_slices(*slice_)
 
     # Transform the window
