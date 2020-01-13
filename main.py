@@ -541,7 +541,7 @@ if __name__ == "__main__":
                        transform=out_transform,
                        ax=ax,
                        zorder=5,
-                       alpha=0.5,
+                       alpha=0.3,
                        cmap=cmap,
                        vmin=0.01,
                        label="elevation buffer")
@@ -565,7 +565,7 @@ if __name__ == "__main__":
     plt.text(plot_buffer_bounds[0] + 800,
              plot_buffer_bounds[3] - 1000,
              "N",
-             zorder=15)
+             zorder=11)
 
     # Scale bar (set to 5km)
     plt.arrow(plot_buffer_bounds[0] + 3000,
