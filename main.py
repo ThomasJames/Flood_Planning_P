@@ -1,40 +1,22 @@
-import numpy as np
-import sys
-import pandas as pd
-# from pyproj import CRS
-# from pyproj import Transformer
-import shapely
-from rtree.index import Index
-from shapely import geometry
 from shapely.geometry import Point, box
 from shapely.geometry import LineString
 from shapely.geometry import Polygon
 import matplotlib.pyplot as plt
-import rasterio.crs
-from pyproj import Geod
-import geopandas as gpd
-import rasterio
 from rasterio import plot, warp
-import rtree
 from rtree import index
 import networkx as nx
 import rasterio
-from rasterio import mask
-from rasterio.windows import Window
-import pyproj
 import numpy as np
 import geopandas as gpd
 import json
-from rasterio.mask import mask
 from rasterio import mask
-from rasterio.enums import Resampling
-import rasterio.transform as transform
 from rasterio import windows
 import tkinter as tk
 from tkinter import *
 from rasterio.transform import xy, rowcol, from_bounds
 
 
+# GUI used to input co-ordinates
 class MyWindow:
     def __init__(self, win):
         self.lbl1 = Label(win, text='Easting')
@@ -70,18 +52,25 @@ class MyWindow:
             print("You should input the coordinate of your location")
 
 
-#       def ok():
-#           self.response = entry1.get(), entry2.get()
-
-
 window = tk.Tk()
+
 mywin = MyWindow(window)
+
+# Give the window a title
 window.title('Flood Protection Program')
+
+# Assign the dimensions of the user interface box
 window.geometry("400x300+10+10")
-window.bind('<Return>', lambda event: mywin.add())  # be able to use "Enter" key to run the GUI
-mywin.t1.focus()  # make the cursor appear in the first entry initially
+
+# be able to use "Enter" key to run the GUI
+window.bind('<Return>', lambda event: mywin.add())
+
+# make the cursor appear in the first entry initially
+mywin.t1.focus()
+
 window.mainloop()
 
+# Variables assigned from GUI to start user position in main
 eastinput = int(east1)
 northinput = int(north1)
 
@@ -98,7 +87,7 @@ def generate_coordinates(p_x, p_y):
 
 # Function to test if any object is within a polygon
 # shapley_object can be any shapley object
-# Shaoe - Must be a shapley shape
+# Shape - Must be a shapley shape
 def is_point_or_shape_in_shape(shapley_object, shape):
     try:
         if shape.contains(shapley_object):
@@ -112,11 +101,12 @@ def is_point_or_shape_in_shape(shapley_object, shape):
 # Additional consideration - Function to ensure that all the roads are within the buffer zone.
 # Coordinate argument - Can be in (x, y) form
 # Buffer argument - Must be a shapely file.
+# Code adapted from a function by Mahmoud Abdelrazek, 2019 - https://github.com/razekmh
 def is_link_inside_polygon(coordinate, buffer):
     try:
         for coord_x_y in coordinate:
             point = Point(coord_x_y)  # Convert to shapley point
-            if buffer.contains(point):  # Test for
+            if buffer.contains(point):  # Test for point in polygon
                 return True
             else:
                 return False
@@ -128,19 +118,20 @@ def is_link_inside_polygon(coordinate, buffer):
 # coords - Must be the coordinates in [x, y]
 # elevation_array - Must be a numpy array containing the elevation data
 # transformation_matrix - The transformation matrix output.
+# Code adapted from a function by Mahmoud Abdelrazek, 2019 - https://github.com/razekmh
 def elevation_adjustment(coords, elevation_array, transformation_matrix):
-    rise = 0
+    rise = 0  # Initialise rise to zero
     try:
-        for i, point in enumerate(coords):
+        for i, point in enumerate(coords):  # Extract coordinates
             x_coord, y_coord = point
-            if i == 0:
-                back_height = elevation_array[rowcol(transformation_matrix, x_coord, y_coord)]
+            if i == 0:  # First value
+                back_height = elevation_array[rowcol(transformation_matrix, x_coord, y_coord)]  # Get elevation
             else:
-                fore_height = elevation_array[rowcol(transformation_matrix, x_coord, y_coord)]
-                if fore_height > back_height:
-                    rise += fore_height - back_height
+                fore_height = elevation_array[rowcol(transformation_matrix, x_coord, y_coord)]  # Get elevation
+                if fore_height > back_height:  # Ignore negative elevation changes
+                    rise += fore_height - back_height  # Add each posotive changes to the rise
                 back_height = fore_height
-        elevation_adjustment = rise / 10
+        elevation_adjustment = rise * 0.1  # To get the adjustment value in minutes.
         return elevation_adjustment
     except IOError:
         print("Unable to perform this operation")
@@ -150,9 +141,9 @@ def elevation_adjustment(coords, elevation_array, transformation_matrix):
 # network - The network that contains the edges
 # path - the output path from the dijkstra_path
 # color - Built in default to blue
-def color_path(network, path, color="blue"):
+def color_path(ntwrk, path, color="blue"):
     try:
-        res = network.copy()
+        res = ntwrk.copy()
         first = path[0]
         for node in path[1:]:
             res.edges[first, node]["color"] = color
@@ -164,16 +155,16 @@ def color_path(network, path, color="blue"):
 
 # Function to obtain colours
 # Graph to which you wish to obtain the colours
-# Default nodes and edges are assiggned within the function
+# Default nodes and edges are assigned within the function
 def obtain_colors(graph, default_node="blue", default_edge="black"):
     try:
-        node_colors = []
+        nde_clr = []
         for node in graph.nodes:
-            node_colors.append(graph.nodes[node].get('color', default_node))
-        edge_colors = []
+            nde_clr.append(graph.nodes[node].get('color', default_node))
+        edge_clr = []
         for u, v in graph.edges:
-            edge_colors.append(graph.edges[u, v].get('color', default_edge))
-        return node_colors, edge_colors
+            edge_clr.append(graph.edges[u, v].get('color', default_edge))
+        return nde_clr, edge_clr
     except IOError:
         print("Unable to perform this operation")
 
@@ -190,13 +181,6 @@ def create_buffer_box(buffer, x, y):
          (x[0] - buffer, y[0] - buffer)]
 
 
-"""""
-Extreme flooding is expected on the Isle of Wight and the authority in charge of planning the emergency response is
-advising everyone to proceed by foot to the nearest high ground.
-To support this process, the emergency response authority wants you to develop a software to quickly advise people 
-of the quickest route that they should take to walk to the highest point of land within a 5km radius.
-"""""
-
 if __name__ == "__main__":
 
     """""  
@@ -204,29 +188,29 @@ if __name__ == "__main__":
     """""
 
     # Import the background map
-    background = rasterio.open( "background/raster-50k_2724246.tif" )
+    background = rasterio.open("background/raster-50k_2724246.tif")
 
-    # Create a background nuympy array
-    background_array = background.read( 1 )
+    # Create a background NumPy array
+    background_array = background.read(1)
 
     # Import the isle_of_wight shape
-    island_shapefile = gpd.read_file( "shape/isle_of_wight.shp" )
+    island_shapefile = gpd.read_file("shape/isle_of_wight.shp")
 
     # Import elevation map
-    elevation = rasterio.open( 'elevation/SZ.asc' )
+    elevation = rasterio.open('elevation/SZ.asc')
 
     # Retrieve the coordinates of the elevation box
     elevation_box_xy = elevation.bounds
-    elevation_raster_box = box( *list( elevation.bounds ) )
+    elevation_raster_box = box(*list(elevation.bounds))
     elevation_box_x, elevation_box_y = elevation_raster_box.exterior.xy
 
     # Append the x and y values to lists to be used in buffer box function
     e_x = []
     e_y = []
     for i in elevation_box_x:
-        e_x.append( i )
+        e_x.append(i)
     for i in elevation_box_y:
-        e_y.append( i )
+        e_y.append(i)
 
     # Create the buffer box file by calling the create buffer box function
     buffer_box = Polygon(create_buffer_box(5000, e_x, e_y))
@@ -254,30 +238,30 @@ if __name__ == "__main__":
     plot_buffer = location.buffer(5000)
 
     # Get the bounds for the 10km limits
-    plot_buffer_bounds = tuple( plot_buffer.bounds )
+    plot_buffer_bounds = tuple(plot_buffer.bounds)
 
     # Create
-    elevation_raster_buffer_intersect = elevation_raster_box.intersection( buffer_zone )
+    elevation_raster_buffer_intersect = elevation_raster_box.intersection(buffer_zone)
 
     # Check if user is on island
-    user_on_land = (island_shapefile.contains( location ))
+    user_on_land = (island_shapefile.contains(location))
     if user_on_land[0] == True:
-        print( "User is on land" )
+        print("User is on land")
     else:
-        print( "Swim to shore" )
+        print("Swim to shore")
 
-    # Test is coordinate within buffer zone is within the sepcified bounding box
+    # Test is coordinate within buffer zone is within the specified bounding box
     if is_point_or_shape_in_shape(
             buffer_zone,
-            buffer_box ):
-        print( " " )
+            buffer_box):
+        print(" ")
     else:
-        print( "You aren't in the specified bounding box please wait..." )
-        if input( "click \"y\" if you Would you like to extend the region? " ) == "y":
-            if is_point_or_shape_in_shape( elevation_raster_buffer_intersect, elevation_raster_box ):
-                print( "Region has been extended" )
+        print("You aren't in the specified bounding box please wait...")
+        if input("click \"y\" if you Would you like to extend the region? ") == "y":
+            if is_point_or_shape_in_shape(elevation_raster_buffer_intersect, elevation_raster_box):
+                print("Region has been extended")
             else:
-                "You location is not in range"
+                print("You location is not in range")
                 sys.exit()
 
     """""  
@@ -295,43 +279,44 @@ if __name__ == "__main__":
     top_right = background.transform * (background.width, background.height)
 
     # Transform the lower limit
-    window_lower_lim = rasterio.transform.rowcol( background_transform,
-                                                  y_window_lower,
-                                                  x_window_lower )
+    window_lower_lim = rasterio.transform.rowcol(background_transform,
+                                                 y_window_lower,
+                                                 x_window_lower)
 
     # Transform the upper limit
-    window_upper_lim = rasterio.transform.rowcol( background_transform,
-                                                  y_window_higher,
-                                                  x_window_higher )
+    window_upper_lim = rasterio.transform.rowcol(background_transform,
+                                                 y_window_higher,
+                                                 x_window_higher)
 
     # Read a window of data
-    slice_ = (slice( window_upper_lim[0],
-                     window_lower_lim[0] ),
-              slice( window_lower_lim[1],
-                     window_upper_lim[1] ))
+    slice_ = (slice(window_upper_lim[0],
+                    window_lower_lim[0]),
+              slice(window_lower_lim[1],
+                    window_upper_lim[1]))
 
-    window_slice = windows.Window.from_slices( *slice_ )
+    window_slice = windows.Window.from_slices(*slice_)
 
     # Transform the window
     transform_window = windows.transform(window_slice,
                                          background.transform)
-
+    # Extract array rows as slices
     window_map = background.read(1, window=window_slice)
 
+    # Assign colour palette to array values for plotting
     palette = np.array([value for key, value in background.colormap(1).items()])
 
+    # Array as plotting image
     island_raster_image = palette[window_map.astype(int)]
 
+    # Convert rasterio image data with palette applied to new plotting variable
     window_map_raster = rasterio.plot.reshape_as_raster(island_raster_image)
-
-    print(window_map_raster.shape)
-
-    # rasterio.plot.show( window_map_raster )
 
     # Create coordinate list to allow for iteration
     highest_east, highest_north = buffer_zone.exterior.xy
+
     easting_list = []
     northing_list = []
+
     for i in highest_east:
         easting_list.append(i)
     for i in highest_north:
@@ -376,12 +361,6 @@ if __name__ == "__main__":
 
     """""  
     IDENTIFY THE NETWORK
-    --------------------
-    Identify the nearest Integrated Transport Network (ITN) node to the user and the nearest ITN node to the highest 
-    point identified in the previous step. To successfully complete this task you could use r-trees.
-    Identify the shortest route using Naismith’s rule from the ITN node nearest to the user and the ITN node nearest 
-    to the highest point.
-
     """""
     # Load the ITN network
     solent_itn_json = "itn/solent_itn.json"
@@ -438,22 +417,7 @@ if __name__ == "__main__":
 
     """""  
     FIND THE SHORTEST ROUTE
-
     """""
-    # Some test coordinates
-    # end to end
-    # (85810, 439619) - Disjointed.
-    # (85110, 450619  - Disjointed.
-    # (85810, 457190) - good
-    # (90000, 450000) - Disjointed
-    # (90000, 430000) - Good
-    # (85500, 439619) - Disjointed at start
-    # (85500, 450619) - Very disjointed at end
-    # (85970, 458898) - Good
-    # (90000, 450619) - Good
-    # (85110, 458898) - Disjointed.
-    # (85810, 457190) = good
-    # Shortest path test coordinate: (85800,  439619)
 
     # Populate a network with the edges and nodes
     network = nx.DiGraph()
@@ -467,15 +431,15 @@ if __name__ == "__main__":
                 buffer_zone):
             continue
 
-        # Calculate the basic travel time for a given road length
-        basic_travel_time = road_length / 5000 * 60
-
         # For forward movements across the road link:
         # Adjust the data to take into account the elevation change
-        adjusted_to_elevation = elevation_adjustment(
+        adjusted_to_elevation = (elevation_adjustment(
             road_coordinates,
             elevation_array,
-            out_transform)
+            out_transform))
+
+        # Calculate the basic travel time for a given road length
+        basic_travel_time = road_length / 5000 * 60
 
         # Calculate the total time weight for forwards movement
         time_weight = basic_travel_time + adjusted_to_elevation
@@ -504,92 +468,74 @@ if __name__ == "__main__":
             road_links[link]['start'],
             fid=link,
             length=road_links[link]['length'],
-            time=time_weight )
+            time=time_weight)
 
     # Identify the shortest path using dijkstra_path function
-    path = nx.dijkstra_path( network,
-                             source=first_node_id,
-                             target=last_node_id,
-                             weight='time' )
+    path = nx.dijkstra_path(network,
+                            source=first_node_id,
+                            target=last_node_id,
+                            weight='time')
 
     # assign the path the colour red
-    shortest_path = color_path( network,
-                                path,
-                                "red" )
+    shortest_path = color_path(network,
+                               path,
+                               "red")
 
     # Retrieve the node colours
-    node_colors, edge_colors = obtain_colors( shortest_path )
+    node_colors, edge_colors = obtain_colors(shortest_path)
 
-    links = []  # this list will be used to populate the feature id (fid) column
-    geom = []  # this list will be used to populate the geometry column
+    # this list will be used to populate the feature id (fid) column
+    links = []
+    # this list will be used to populate the geometry column
+    geom = []
 
     # Populate the shortest path
     first_node = path[0]
     for node in path[1:]:
         link_fid = network.edges[first_node, node]['fid']
-        links.append( link_fid )
-        geom.append( LineString( road_links[link_fid]['coords'] ) )
+        links.append(link_fid)
+        geom.append(LineString(road_links[link_fid]['coords']))
         first_node = node
 
     # Create Geopandas shortest path for plotting
-    shortest_path_gpd = gpd.GeoDataFrame( {"fid": links,
-                                           "geometry": geom} )
+    shortest_path_gpd = gpd.GeoDataFrame({"fid": links,
+                                          "geometry": geom})
+
     """""
     PLOTTING                                           
     --------
     """""
-    #
-    # Todo: Plotting check points:
-    # Suitable marker for the user location
-    # Suitable marker for the highest point
-    # todo: Background map
-    #  Elevation overlay
-    # a 10km limit around the user
-    # an automatically adjusting North arrow and scale bar
-    # todo: Elevation side bar
-    # todo: Elevation side bar
-    # todo: A legend - Start / Highest / Shortest path
-    # shortest_path_gpd.plot(color="salmon", )
 
-    # PLot the line between the user location and the and first node
-
-    # PLot the line between the highest point and the last node
-
-    # Plotting of the buffer zone
-    # plt.fill(x_bi, y_bi, color="skyblue", alpha=0.2, zorder=0)
-
-    # rasterio.plot.show(background, alpha=0.2) # todo work out how to overlay the rasterio plots
-    # Plotting of the elevation
-    # rasterio.plot.show(elevation, alpha=1, contour=False, zorder=0)
-    # rasterio.plot.show(background, alpha=0.5, contour=False, zorder=1)
-
-    # fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-    # axs[0].imshow(elevation_mask)
-
-    # custom paint job
+    # Custom paint job
     cmap = plt.get_cmap('inferno')
 
+    # Set level of colour map
     cmap.set_under('r', alpha=0)
+
     # All plotting small but collated
     fig, ax = plt.subplots(dpi=300)
 
+    # Assign elevation raster as image to plot
     elevation_plot = ax.imshow(elevation_mask[0, :, :],
                                cmap='inferno',
                                zorder=2)
 
+    # Plot colourbar
     fig.colorbar(elevation_plot,
                  ax=ax)
 
+    # Plot buffer
     ax.set_xlim([plot_buffer_bounds[0],
                  plot_buffer_bounds[2]])
 
     ax.set_ylim([plot_buffer_bounds[1],
                  plot_buffer_bounds[3]])
 
+    # Plot background map
     rasterio.plot.show(window_map_raster,
                        ax=ax, zorder=1,
                        transform=transform_window)
-
+    # Plot elevation data
     rasterio.plot.show(elevation_mask,
                        transform=out_transform,
                        ax=ax,
@@ -598,63 +544,82 @@ if __name__ == "__main__":
                        cmap=cmap,
                        vmin=0.01,
                        label="elevation buffer")
-
+    # Plot shortest path
     shortest_path_gpd.plot(ax=ax,
                            edgecolor='black',
                            linewidth=3,
                            label="shortest path",
                            zorder=10)
 
-    # then put all of the rasterio plots on after this
-    # YOU MUST SPECIFY WHAT AXIS YOU ARE ON WITH ax=ax
-    # use the correct transforms
-    # Create the plot
-
-    # plotting too large
+    # Title
     plt.title("Isle of Wight Flood Plan")
+
     # y label
     plt.ylabel("Northings")
+
     # x label
     plt.xlabel("Eastings")
-    # 10km northings limit
 
-    # plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
-    # 10km easting limit
-    # plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
-    # North Arrow (x, y) to (x+dx, y+dy).
+    # North scale bar
+    plt.text(plot_buffer_bounds[0] + 800,
+             plot_buffer_bounds[3] - 1000,
+             "N",
+             zorder=15)
 
-    plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N", zorder=10)
     # Scale bar (set to 5km)
-    plt.arrow(plot_buffer_bounds[0] + 3000, plot_buffer_bounds[1] + 1000, 5000, 0)
+    plt.arrow(plot_buffer_bounds[0] + 3000,
+              plot_buffer_bounds[1] + 1000,
+              5000,
+              0,
+              zorder=11)
 
-    plt.arrow(plot_buffer_bounds[0] + 1000, plot_buffer_bounds[3] - 3000, 0, 1000, head_width=200)
+    # Arrow head
+    plt.arrow(plot_buffer_bounds[0] + 1000,
+              plot_buffer_bounds[3] - 3000,
+              0,
+              1000,
+              head_width=200,
+              zorder=15)
 
-    plt.text(plot_buffer_bounds[0] + 3000 + 2500, plot_buffer_bounds[1] + 1200, "5km")
+    # Scale "5km" label
+    plt.text(plot_buffer_bounds[0] + 3000 + 2500,
+             plot_buffer_bounds[1] + 1200,
+             "5km",
+             zorder=11)
+
     # User location
-    plt.scatter(east, north, color="black", marker=11)
+    plt.scatter(east,
+                north,
+                color="black",
+                marker=11)
+
     # Plot the first node
-    plt.scatter(start_node[0], start_node[1], color="red", marker="x", label="user position", zorder=11)
+    plt.scatter(start_node[0],
+                start_node[1],
+                color="red",
+                marker="x",
+                label="user position",
+                zorder=11)
+
     # Nearest node to user
-    plt.scatter(highest_east, highest_north, color="white", marker=11)
-    # highest point
-    plt.scatter(finish_node[0], finish_node[1], color="green", marker="x", label="highest point", zorder=11)
+    plt.scatter(highest_east,
+                highest_north,
+                color="white",
+                marker=11)
+
+    # Highest point
+    plt.scatter(finish_node[0],
+                finish_node[1],
+                color="green",
+                marker="x",
+                label="highest point",
+                zorder=11)
+    # Legend
     plt.legend(loc="upper right")
 
     plt.show()
 
-    """""
-    EXTENDING THE REGION
-    --------------------
-    The position of the user is restricted to a region in where the user must be more than 5km from the edge of the
-    elevation raster. Write additional code to overcome this limitation.
-    """""
-
-    """""
-        USER OUTPUT (Additional feature) 
-        CALORIE COUNTER (Additional feature)
-        A calorie counter that takes the weight and height of the user and gives a calorie burnt output. 
-        A simple textfile as an output - To give the user some information about their journey. 
-        """""
+    """"" ADDITIONAL FEATURES"""""
 
     # Loop to retrieve the lengths of every roadlink segment.
     lengths_of_shortest_path = []
