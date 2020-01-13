@@ -17,6 +17,8 @@ from rasterio.transform import xy, rowcol, from_bounds
 
 
 # GUI used to input co-ordinates
+# This class was an adaptation of code by Azat Lbrakov, 2017:
+# Link: https://stackoverflow.com/questions/51832502/returning-a-value-from-a-tkinter-form
 class MyWindow:
     def __init__(self, win):
         self.lbl1 = Label(win, text='Easting')
@@ -141,6 +143,7 @@ def elevation_adjustment(coords, elevation_array, transformation_matrix):
 # network - The network that contains the edges
 # path - the output path from the dijkstra_path
 # color - Built in default to blue
+# Adaptation of code by Aldo Lipani, 2019
 def color_path(ntwrk, path, color="blue"):
     try:
         res = ntwrk.copy()
@@ -156,6 +159,7 @@ def color_path(ntwrk, path, color="blue"):
 # Function to obtain colours
 # Graph to which you wish to obtain the colours
 # Default nodes and edges are assigned within the function
+# Adaptation of code by Aldo Lipani, 2019
 def obtain_colors(graph, default_node="blue", default_edge="black"):
     try:
         nde_clr = []
