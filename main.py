@@ -572,6 +572,11 @@ if __name__ == "__main__":
     elevation_plot = ax.imshow(elevation_mask[0, :, :], cmap='inferno', zorder=2)
     fig.colorbar(elevation_plot, ax=ax)
 
+    plt.ylim((x_window_lower, x_window_higher))
+    # 10km easting limit
+    plt.xlim((y_window_lower, y_window_higher))
+    # North Arrow (x, y) to (x+dx, y+dy).
+
     ax.set_xlim([y_window_lower, y_window_higher])
     ax.set_ylim([x_window_lower, x_window_higher])
     rasterio.plot.show(window_map_raster, ax=ax, zorder=1, transform=transform_window)
@@ -590,10 +595,6 @@ if __name__ == "__main__":
     # x label
     plt.xlabel("Eastings")
     # 10km northings limit
-    plt.ylim((plot_buffer_bounds[1], plot_buffer_bounds[3]))
-    # 10km easting limit
-    plt.xlim((plot_buffer_bounds[0], plot_buffer_bounds[2]))
-    # North Arrow (x, y) to (x+dx, y+dy).
 
     plt.text(plot_buffer_bounds[0] + 800, plot_buffer_bounds[3] - 1000, "N", zorder=10)
     # Scale bar (set to 5km)
