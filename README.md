@@ -17,4 +17,6 @@ to walk to the highest point of land within a 5km radius.
 
 4. The shortest path along the ITN is determined using Naismith’s rule.
 
-5. Plots a background map 10km x 10km of the surrounding area.
+5. Plots a background map 10km x 10km of the surrounding area - Gives the user an on screen display of their location. 
+
+
