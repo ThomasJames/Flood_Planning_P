@@ -48,13 +48,15 @@ pip intsall tkinter
 pip install rasterio 
 pip install rtree 
 ```
-NOTE: Coordinate Reference System & Datum: OSBG46
 
 #### Data
 
+Geodetic CRS: OSGB 1936. Datum: OSGB 1936
 - Elevation data .asc
 - Background raster .tif
 - Intergrated tranport network .json
+- land shapefiles .shp
+- Source https://digimap.edina.ac.uk/
 
 ## Clone
 Clone this repo to your local machine using ```git clone git@github.com:ThomasJames/Isle_of_Wight_Flood_Plan.git```
