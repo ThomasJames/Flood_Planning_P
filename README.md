@@ -43,7 +43,7 @@ pip install rasterio
 pip install rtree 
 ```
 ## Clone
-Clone this repo to your local machine using https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan
+Clone this repo to your local machine using ```https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan```
 
 ## Contributers 
 - Jack Pearce: https://github.com/JackPearce
