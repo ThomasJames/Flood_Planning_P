@@ -19,4 +19,19 @@ to walk to the highest point of land within a 5km radius.
 
 5. Plots a background map 10km x 10km of the surrounding area - Gives the user an on screen display of their location. 
 
+### Prerequisites
+
+The following librairies will need to be installed: 
+```
+pip install matplotlib
+pip install numpy
+pip install shapely
+pip install geopandas
+pip install json
+pip install networx
+pip intsall tkinter
+pip install rasterio 
+pip install rtree 
+
+```
 
