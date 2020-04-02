@@ -22,6 +22,11 @@ to walk to the highest point of land within a 5km radius.
 
 5. Plots a background map 10km x 10km of the surrounding area - Gives the user an on screen display of their location. 
 
+## Additional Features:
+
+- Calorie counter 
+- GUI interface for data entry 
+
 ### Prerequisites
 
 You must be running python 3.6
@@ -36,6 +41,14 @@ pip install networx
 pip intsall tkinter
 pip install rasterio 
 pip install rtree 
-
 ```
+## Clone
+Clone this repo to your local machine using https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan
+
+## Contributers 
+Jack Pearce 
+Thomas James
+
+
+
 
