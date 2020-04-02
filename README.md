@@ -1,4 +1,4 @@
-<!-- [![FVCproductions](https://avatars1.githubusercontent.com/u/4284691?v=3&s=200)](http://fvcproductions.com) -->
+
 
 # Isle of Wight flood plan 
 
@@ -23,7 +23,8 @@ to walk to the highest point of land within a 5km radius.
 
 ### Prerequisites
 
-The following librairies will need to be installed: 
+You must be running python 3.6
+The following librairies will also need to be installed: 
 ```
 pip install matplotlib
 pip install numpy
