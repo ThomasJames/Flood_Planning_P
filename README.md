@@ -15,15 +15,17 @@ to walk to the highest point of land within a 5km radius.
 
 ## This program works in the following steps:
 
-1. Request user for coordinates 
+- Request user for coordinates. 
 
-2. Identify the highest point within 5km
+- Check the user is on land.
 
-3. Nearest Integrated Transport Network - Used to find the nearest transport node
+- Identify the highest point within 5km.
 
-4. The shortest path along the ITN is determined using Naismith’s rule.
+- Nearest Integrated Transport Network - Used to find the nearest transport node.
 
-5. Plots a background map 10km x 10km of the surrounding area - Gives the user an on screen display of their location. 
+- The shortest path along the ITN is determined using Naismith’s rule.
+
+- Plots a background map 10km x 10km of the surrounding area - Gives the user an on screen display of their location. 
 
 ## Additional Features:
 
@@ -46,7 +48,7 @@ pip install rasterio
 pip install rtree 
 ```
 ## Clone
-Clone this repo to your local machine using ```https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan```
+Clone this repo to your local machine using ```git clone https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan```
 
 ## Contributers 
 - Jack Pearce: https://github.com/JackPearce
