@@ -46,8 +46,9 @@ pip install rtree
 Clone this repo to your local machine using https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan
 
 ## Contributers 
-Jack Pearce 
-Thomas James
+- Jack Pearce: https://github.com/JackPearce
+- Thomas James: https://github.com/ThomasJames
+- Yufan Zhao: https://github.com/YuJaden
 
 
 
