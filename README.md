@@ -10,8 +10,9 @@ To support this process, the emergency response authority wants you to develop
 a software to quickly advise people of the quickest route that they should take
 to walk to the highest point of land within a 5km radius.
 
-<img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/Example%20of%20use.png" width="500">
+## Output
 
+<img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/Example%20of%20use.png" width="500">
 
 ## This program works in the following steps:
 
@@ -47,6 +48,14 @@ pip intsall tkinter
 pip install rasterio 
 pip install rtree 
 ```
+NOTE: Coordinate Reference System & Datum: OSBG46
+
+#### Data
+
+- Elevation data .asc
+- Background raster .tif
+- Intergrated tranport network .json
+
 ## Clone
 Clone this repo to your local machine using ```git clone git@github.com:ThomasJames/Isle_of_Wight_Flood_Plan.git```
 
