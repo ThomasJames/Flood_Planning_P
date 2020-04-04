@@ -12,6 +12,10 @@ to walk to the highest point of land within a 5km radius.
 
 ## Output
 
+Map with path of recomendation plotted by black line. 
+5km buffer zone also indicates the land elevation (meters)
+
+
 <img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/Example_of_use.png" width="500">
 
 ## This program works in the following steps:
