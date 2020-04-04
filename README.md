@@ -12,7 +12,7 @@ to walk to the highest point of land within a 5km radius.
 
 ## Output
 
-<img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/Example%20of%20use.png" width="500">
+<img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/Example_of_use.png" width="500">
 
 ## This program works in the following steps:
 
