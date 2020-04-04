@@ -30,8 +30,14 @@ to walk to the highest point of land within a 5km radius.
 
 ## Additional Features:
 
-- Calorie counter 
 - GUI interface for data entry 
+
+<img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/GUI.png">
+
+- Calorie counter 
+
+<img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/Calorie_calculator.png">
+
 
 ### Prerequisites
 
