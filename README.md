@@ -38,7 +38,7 @@ Map with path of recomendation plotted by black line.
 
 <img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/GUI.png" width="350">
 
-- Calorie counter 
+- Calorie counter (Just for fun)
 
 <img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/Calorie_calculator.png" width="250">
 
