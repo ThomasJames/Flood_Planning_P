@@ -21,8 +21,8 @@ from rasterio.transform import xy, rowcol, from_bounds
 # Link: https://stackoverflow.com/questions/51832502/returning-a-value-from-a-tkinter-form
 class MyWindow:
     def __init__(self, win):
-        self.lbl1 = Label(win, text='Easting')
-        self.lbl2 = Label(win, text='Northing')
+        self.lbl1 = Label(win, text='Northing')
+        self.lbl2 = Label(win, text='Easting')
         self.ibl3 = Label(win, text='Please input your current location and press enter').pack()
         self.var1 = tk.StringVar("")
         self.var2 = tk.StringVar("")
