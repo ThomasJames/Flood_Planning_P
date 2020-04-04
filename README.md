@@ -49,7 +49,7 @@ pip install numpy
 pip install shapely
 pip install geopandas
 pip install json
-pip install networx
+pip install networkx
 pip intsall tkinter
 pip install rasterio 
 pip install rtree 
