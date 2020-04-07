@@ -1,19 +1,15 @@
-from shapely.geometry import Point, box
-from shapely.geometry import LineString
-from shapely.geometry import Polygon
+import tkinter as tk
+from tkinter import *
+from shapely.geometry import Point, box, LineString, Polygon
 import matplotlib.pyplot as plt
-from rasterio import plot, warp
+from rasterio import plot, warp, windows, mask
+from rasterio.transform import xy, rowcol, from_bounds
 from rtree import index
 import networkx as nx
 import rasterio
 import numpy as np
 import geopandas as gpd
 import json
-from rasterio import mask
-from rasterio import windows
-import tkinter as tk
-from tkinter import *
-from rasterio.transform import xy, rowcol, from_bounds
 
 
 # GUI used to input co-ordinates
@@ -47,7 +43,6 @@ class MyWindow:
 
         except:
             print("You should input the coordinate of your location")
-
 
 window = tk.Tk()
 
