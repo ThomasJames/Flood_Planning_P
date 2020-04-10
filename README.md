@@ -36,12 +36,9 @@ Map with path of recomendation plotted by black line.
 
 - GUI interface for data entry 
 
-<img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/GUI.png" width="350">
-
 - Calorie counter (Just for fun)
 
-<img src="https://github.com/ThomasJames/Isle_of_Wight_Flood_Plan/blob/master/Calorie_calculator.png" width="250">
-
+- Text doc, containing details of the jounrey. 
 
 ### Prerequisites
 
