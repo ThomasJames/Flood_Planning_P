@@ -38,7 +38,7 @@ Map with path of recomendation plotted by black line.
 
 - Calorie counter (Just for fun)
 
-- Text doc, containing details of the jounrey. 
+- Text doc, containing details of the journey. 
 
 ### Prerequisites
 
