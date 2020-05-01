@@ -12,10 +12,12 @@ import geopandas as gpd
 import json
 
 
-# GUI used to input co-ordinates
-# This class was an adaptation of code by Azat Lbrakov, 2017:
-# Link: https://stackoverflow.com/questions/51832502/returning-a-value-from-a-tkinter-form
 class MyWindow:
+    ''''
+    GUI used to input co-ordinates
+    This class was an adaptation of code by Azat Lbrakov, 2017:
+    Link: https://stackoverflow.com/questions/51832502/returning-a-value-from-a-tkinter-form
+    ''''
     def __init__(self, win):
         self.lbl1 = Label(win, text='Northing')
         self.lbl2 = Label(win, text='Easting')
