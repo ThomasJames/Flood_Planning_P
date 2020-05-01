@@ -66,21 +66,24 @@ window.mainloop()
 eastinput = int(east1)
 northinput = int(north1)
 
-
-# Function to join lists into list from 'list = [(x, y), (x, y)]'
-# p_x must be a list of x coordinates
-# p_y must be a list of y coordinates
+'''''
+Function to join lists into list from 'list = [(x, y), (x, y)]'
+p_x must be a list of x coordinates
+p_y must be a list of y coordinates
 def generate_coordinates(p_x, p_y):
+'''''
     try:
         return list(map(lambda x, y: (x, y), p_x, p_y))
     except IOError:
         print("Unable to perform this operation")
 
 
-# Function to test if any object is within a polygon
-# shapley_object can be any shapley object
-# Shape - Must be a shapley shape
 def is_point_or_shape_in_shape(shapley_object, shape):
+    ''''
+    Function to test if any object is within a polygon
+    shapley_object can be any shapley object
+    Shape - Must be a shapley shape
+    ''''
     try:
         if shape.contains(shapley_object):
             return True
@@ -89,12 +92,14 @@ def is_point_or_shape_in_shape(shapley_object, shape):
     except IOError:
         print("Unable to perform this operation")
 
-
-# Additional consideration - Function to ensure that all the roads are within the buffer zone.
-# Coordinate argument - Can be in (x, y) form
-# Buffer argument - Must be a shapely file.
-# Code adapted from a function by Mahmoud Abdelrazek, 2019 - https://github.com/razekmh
 def is_link_inside_polygon(coordinate, buffer):
+    
+    ''''
+    Additional consideration - Function to ensure that all the roads are within the buffer zone.
+    Coordinate argument - Can be in (x, y) form
+    Buffer argument - Must be a shapely file.
+    Code adapted from a function by Mahmoud Abdelrazek, 2019 - https://github.com/razekmh
+    ''''
     try:
         for coord_x_y in coordinate:
             point = Point(coord_x_y)  # Convert to shapley point
@@ -106,12 +111,14 @@ def is_link_inside_polygon(coordinate, buffer):
         print("Unable to perform this operation")
 
 
-# Function to return adjustment time
-# coords - Must be the coordinates in [x, y]
-# elevation_array - Must be a numpy array containing the elevation data
-# transformation_matrix - The transformation matrix output.
-# Code adapted from a function by Mahmoud Abdelrazek, 2019 - https://github.com/razekmh
 def elevation_adjustment(coords, elevation_array, transformation_matrix):
+    ''''
+    Function to return adjustment time
+    coords - Must be the coordinates in [x, y]
+    elevation_array - Must be a numpy array containing the elevation data
+    transformation_matrix - The transformation matrix output.
+    Code adapted from a function by Mahmoud Abdelrazek, 2019 - https://github.com/razekmh
+    ''''
     rise = 0  # Initialise rise to zero
     try:
         for i, point in enumerate(coords):  # Extract coordinates
@@ -128,13 +135,14 @@ def elevation_adjustment(coords, elevation_array, transformation_matrix):
     except IOError:
         print("Unable to perform this operation")
 
-
-# Function to generate color path
-# network - The network that contains the edges
-# path - the output path from the dijkstra_path
-# color - Built in default to blue
-# Adaptation of code by Aldo Lipani, 2019
-def color_path(ntwrk, path, color="blue"):
+def color_path(ntwrk, path, color="blue"):    
+    ''''
+    Function to generate color path
+    network - The network that contains the edges
+    path - the output path from the dijkstra_path
+    color - Built in default to blue
+    Adaptation of code by Aldo Lipani, 2019
+    ''''
     try:
         res = ntwrk.copy()
         first = path[0]
@@ -146,11 +154,13 @@ def color_path(ntwrk, path, color="blue"):
         print("Unable to perform this operation")
 
 
-# Function to obtain colours
-# Graph to which you wish to obtain the colours
-# Default nodes and edges are assigned within the function
-# Adaptation of code by Aldo Lipani, 2019
 def obtain_colors(graph, default_node="blue", default_edge="black"):
+    ''''
+    Function to obtain colours
+    Graph to which you wish to obtain the colours
+    Default nodes and edges are assigned within the function
+    Adaptation of code by Aldo Lipani, 2019
+    ''''
     try:
         nde_clr = []
         for node in graph.nodes:
@@ -163,11 +173,13 @@ def obtain_colors(graph, default_node="blue", default_edge="black"):
         print("Unable to perform this operation")
 
 
-# Function to create a smaller interior box given a buffer area
-# buffer argument takes the buffer range yo would like to create
-# x is a list of x values
-# y is a list of y values
 def create_buffer_box(buffer, x, y):
+    ''''
+    Function to create a smaller interior box given a buffer area
+    buffer argument takes the buffer range yo would like to create
+    x is a list of x values
+    y is a list of y values
+    ''''
     return \
         [(x[2] + buffer, y[0] + buffer),
          (x[2] + buffer, y[1] - buffer),
