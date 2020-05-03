@@ -651,7 +651,7 @@ if __name__ == "__main__":
         calories_burnt = round(travel_time_s * calories_burnt_per_second)
         print("You will burn ", calories_burnt, "calories")
     else:
-        print("I guess you will just get fat then...")
+        print("No problem!")
 
     # Create a list of strings to be written to the fie
     information_list = [
